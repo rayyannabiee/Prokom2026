@@ -1,11 +1,12 @@
 public class peminjam extends manusia {
-    public peminjam(String nama, int umur, int id){
-        super(nama, umur, id); //MEMANGGIL KONSTRUKTOR HEWAN
+    public peminjam(String nama, String nim){
+        super(nama, nim); 
     }
 
     @Override
-    public void id(){
-        System.out.println(getnama() + " id : 0887532");
+    public void datapeminjam()
+    {
+        System.out.println(getnama() + " nim : " + getnim());
     }
     
 }
