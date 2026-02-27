@@ -8,5 +8,7 @@ public class peminjam extends manusia {
     {
         System.out.println(getnama() + " nim : " + getnim());
     }
+
+    
     
 }
