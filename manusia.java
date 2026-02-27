@@ -1,30 +1,26 @@
 public class manusia {
     private String nama; //enkapsulasi
-    private int umur;
-    private int id;
+    private String nim;
+  
     //setter
-    public manusia(String nama, int umur, int id){ //construktor
+    public manusia(String nama, String nim){ //construktor
         this.nama = nama;
-        this.umur = umur;
-        this.id = id;
+        this.nim = nim;
     }            
-    public void setumur(int umur){
-        this.umur = umur;
-    }
-     public void setid(int id){
-        this.id = id;
+    public void setnim(String nim){
+        this.nim = nim;
     }
     public String getnama(){
         return nama;
     }
-    public int getumur(){
-        return umur;
+    public String getnim(){
+        return nim;
     }
-    public int getid(){
-        return id;
+    public void nim(){
+        System.out.println("nim: " + getnim());
     }
-    public void id(){
-        System.out.println("id peminjam: ");
+    public void datapeminjam() {
+        System.out.println(getnama() + " nim : " + getnim());
     }
     
 }
