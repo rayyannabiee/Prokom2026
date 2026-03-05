@@ -82,18 +82,15 @@ public class peminjam extends manusia {
         tambahpeminjam(new peminjam("Muhammad Rochman", "09021282530079",  "082179337100", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Noufal Izdihar" ," 09021282530093", "081271026897", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Pijar Yefa Tri Putra" ,"09021282530108", "083116870745", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Alfinandra Rashyid Pratama", "090212825115", "085266657473", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Aqilah Rafif Masrian", "09021282530080", "085267889639", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Chanda putri zahira", "09021282530110", "085268054815", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Dhea Aurellia", "09021282530075", "081368969955", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Duhairillah", "09021282530092", "089604451010", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Ega Asliya Putri", "09021282530098", "087747472112", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Endry Julyan Putra", "09021282530089,", "08995268346", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Jihan Faraza Melka", "09021282530073", "087817012221", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Laudia Zahratus Sita", "09021282530085", "082176137528", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("M. Arya Putra Satria"  , "09021282530077", "087815580274", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("M. Bolkiah Ayesha Alfarizi Asyari" , "09021282530106", "081327290869", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("M. Nabil Imtiyaz", "09021282530116,", "082372335225", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Raditya Derry Armadani", "09021282530094", "082184381231", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Raditya Ihsan", "09021282530091", "082373878848", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Rifai Pideksa Sinulingga"," 09021282530109", "081360303029", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Rizky Aditya Kairupan", "09021282530090", "083841192991", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Shafin Maulana", "09021282530103", "082181363615", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Shakilla Marsya", "09021282530086", "089602160807", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Sulivan Cahyadi", "09021282530111", "081365711844", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Tuah Shahjahan Arzu", "09021282530084", "081398475318", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Verizka Primallea Gustikanayla", "09021282530105", "087844751664", 0, "30-12-2026"));
     }
 
 }
