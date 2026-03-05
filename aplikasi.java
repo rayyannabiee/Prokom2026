@@ -7,7 +7,7 @@ public class aplikasi {
         int pilihan;
 
         do {
-            System.out.println("===== MENU PERPUSTAKAAN =====");
+            System.out.println("\n ===== MENU PERPUSTAKAAN =====");
             System.out.println("1. Buku");
             System.out.println("2. Notifikasi");
             System.out.println("3. Menu 3");
