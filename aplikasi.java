@@ -1,5 +1,7 @@
 import java.util.Scanner;
 import Buku.Utama;
+import Buku.adminlogin;
+import Buku.admin;
 
 public class aplikasi {
     public static void main(String[] args) {
@@ -9,11 +11,12 @@ public class aplikasi {
         do {
             System.out.println("===== MENU PERPUSTAKAAN =====");
             System.out.println("1. Buku");
-            System.out.println("2. Menu 2");
+            System.out.println("2. Admin");
             System.out.println("3. Menu 3");
             System.out.println("4. Keluar");
             System.out.print("Pilih menu: ");
             pilihan = s.nextInt();
+            s.nextLine();
 
             switch (pilihan) {
                 case 1:
@@ -32,10 +35,26 @@ public class aplikasi {
                             System.out.println("Pilihan salah");
                     }
                     } while (pilih != 1);
+                    break;
                     
 
                 case 2:
-                    System.out.println("isi ya teman");
+                    System.out.println("\n--- LOGIN ADMIN ---");
+                    adminlogin login= new adminlogin();
+
+                    System.out.print("Username:" );
+                    String username= s.nextLine();
+                    System.out.print("Password:" );
+                    String password= s.nextLine();
+
+                    if(login.ceklogin(username, password)){
+                        admin a= login.getadminAktif();
+                        System.out.println("Login berhasil! Selamat datang "+ a.getusername());
+                    }else{
+                        System.out.println("Login gagal. Ulangi kembali");
+                    }
+
+                  
                     break;
 
                 case 3:
