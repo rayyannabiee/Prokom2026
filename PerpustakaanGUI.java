@@ -1,6 +1,8 @@
 import java.awt.*;
+import java.awt.dnd.DropTarget;
 import javax.swing.*;
 import javax.swing.border.Border;
+
 
 public class PerpustakaanGUI {
     public static void main(String[] args) {
@@ -42,10 +44,9 @@ public class PerpustakaanGUI {
         panel.add(subLabel);
         frame.setIconImage(logo.getImage());
         
-        
-        
-
+        JTextField text = new JTextField();
+        text.setText("Daftar Buku");
         
     }
-    
+
 }

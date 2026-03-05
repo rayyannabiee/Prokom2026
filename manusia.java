@@ -1,11 +1,14 @@
 public class manusia {
     private String nama; //enkapsulasi
     private String nim;
+    private String nomorhp;
+    
   
     //setter
-    public manusia(String nama, String nim){ //construktor
+    public manusia(String nama, String nim, String nomorhp){ //construktor
         this.nama = nama;
         this.nim = nim;
+        this.nomorhp = nomorhp;
     }            
     public void setnim(String nim){
         this.nim = nim;
@@ -16,11 +19,14 @@ public class manusia {
     public String getnim(){
         return nim;
     }
-    public void nim(){
-        System.out.println("nim: " + getnim());
+    public String getnomorhp(){
+        return nomorhp;
     }
-    public void datapeminjam() {
-        System.out.println(getnama() + " nim : " + getnim());
+
+    public void datamanusia() {
+        System.out.println( " nama: " + getnama());
+        System.out.println(" nim: " + getnim());
+        System.out.println(" nomor hp: " + getnomorhp());
     }
     
 }
