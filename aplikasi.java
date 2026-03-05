@@ -35,8 +35,7 @@ public class aplikasi {
                     break;
 
                 case 2:
-                    Notifikasi n = new Notifikasi("Buku yang dipinjam hampir jatuh tempo", "05-03-2026");
-                    n.jalankanNotifikasi();
+                    Notifikasi.menuNotifikasi(s);
                     break;
 
                 case 3:
