@@ -17,7 +17,6 @@ public abstract class Notifikasi implements KirimNotif {
 
     public abstract void jenisNotifikasi();
 
-    // METHOD AGAR BISA DIPANGGIL DARI MAIN
     public static void menuNotifikasi(Scanner s) {
 
         int pilih;
