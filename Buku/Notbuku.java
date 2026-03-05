@@ -7,7 +7,7 @@ public class Notbuku {
         this.admin = admin;
     }
 
-    public void cetakStruk(Detail[] buku) {
+    public void cetakDaftar(Detail[] buku) {
         System.out.println("\n============ DAFTAR BUKU ============");
         System.out.println("Di data oleh: " + admin);
         for (Detail p : buku) {
