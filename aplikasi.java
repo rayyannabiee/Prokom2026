@@ -32,7 +32,7 @@ public class aplikasi {
                             System.out.println("Pilihan salah");
                     }
                     } while (pilih != 1);
-                    
+                    break;
 
                 case 2:
                     Notifikasi n = new Notifikasi("Buku yang dipinjam hampir jatuh tempo", "05-03-2026");
