@@ -1,5 +1,7 @@
-import java.util.Scanner;
 import Buku.Utama;
+import Buku.admin;
+import Buku.adminlogin;
+import java.util.Scanner;
 
 public class aplikasi {
     public static void main(String[] args) {
@@ -39,9 +41,20 @@ public class aplikasi {
                     break;
 
                 case 3:
-                    datakelas
-                    System.out.println("Isi ya teman");
-                    break;
+                    System.out.println("\n--- LOGIN ADMIN ---");
+                    adminlogin login= new adminlogin();
+
+                    System.out.print("Username:" );
+                    String username= s.nextLine();
+                    System.out.print("Password:" );
+                    String password= s.nextLine();
+
+                    if(login.ceklogin(username, password)){
+                        admin a= login.getadminAktif();
+                        System.out.println("Login berhasil! Selamat datang "+ a.getusername());
+                    }else{
+                        System.out.println("Login gagal. Ulangi kembali");
+                    }
 
                 case 4:
                     System.out.println("Program selesai.");
