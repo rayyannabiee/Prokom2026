@@ -39,6 +39,7 @@ public class aplikasi {
                     break;
 
                 case 3:
+                    datakelas
                     System.out.println("Isi ya teman");
                     break;
 
