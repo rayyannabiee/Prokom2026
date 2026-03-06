@@ -1,3 +1,4 @@
+package Buku;
 public class adminlogin {
     private admin[] daftarAdmin= new admin[5];
     private admin adminAktif;
