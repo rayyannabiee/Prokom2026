@@ -1,6 +1,6 @@
 import java.util.*;
 public class peminjam extends manusia {
-    private int jumlahpinjam;
+    private int jumlahpinjam = 0;
     private String bataspinjam;
     public peminjam(String nama, String nim, String nomorhp, int jumlahpinjam, String bataspinjam) {
         super(nama, nim, nomorhp);
