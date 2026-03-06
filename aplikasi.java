@@ -12,7 +12,7 @@ public class aplikasi {
             System.out.println("\n ===== MENU PERPUSTAKAAN =====");
             System.out.println("1. Buku");
             System.out.println("2. Notifikasi");
-            System.out.println("3. Menu 3");
+            System.out.println("3. Admin");
             System.out.println("4. Keluar");
             System.out.print("Pilih menu: ");
             pilihan = s.nextInt();
