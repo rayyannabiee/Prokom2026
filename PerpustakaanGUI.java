@@ -6,9 +6,9 @@ import javax.swing.border.LineBorder;
 public class PerpustakaanGUI {
     public static void main(String[] args) {
 
-        ImageIcon logo = new ImageIcon("GUI/kanata halo.jpg");
+        ImageIcon logo = new ImageIcon("kanata halo.jpg");
 
-        ImageIcon buku = new ImageIcon("GUI/buku.png");
+        ImageIcon buku = new ImageIcon("buku.png");
 
         JFrame frame = new JFrame();
         frame.setTitle("Perpustakaan Digital");
