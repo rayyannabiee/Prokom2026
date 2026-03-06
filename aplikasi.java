@@ -7,7 +7,7 @@ public class aplikasi {
         int pilihan;
 
         do {
-            System.out.println("===== MENU PERPUSTAKAAN =====");
+            System.out.println("\n ===== MENU PERPUSTAKAAN =====");
             System.out.println("1. Buku");
             System.out.println("2. Notifikasi");
             System.out.println("3. Menu 3");
@@ -35,11 +35,11 @@ public class aplikasi {
                     break;
 
                 case 2:
-                    Notifikasi n = new Notifikasi("Buku yang dipinjam hampir jatuh tempo", "05-03-2026");
-                    n.jalankanNotifikasi();
+                    Notifikasi.menuNotifikasi(s);
                     break;
 
                 case 3:
+                    datakelas
                     System.out.println("Isi ya teman");
                     break;
 
