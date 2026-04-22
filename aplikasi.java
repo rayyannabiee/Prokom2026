@@ -13,7 +13,8 @@ public class aplikasi {
             System.out.println("1. Buku");
             System.out.println("2. Notifikasi");
             System.out.println("3. Admin");
-            System.out.println("4. Keluar");
+            System.out.println("4. peminjam");
+            System.out.println("5. Keluar");
             System.out.print("Pilih menu: ");
             pilihan = s.nextInt();
 
@@ -57,6 +58,10 @@ public class aplikasi {
                     }
 
                 case 4:
+                    System.out.println(" LOGIN PEMINJAM ");
+                    
+                    break;
+                case 5:
                     System.out.println("Program selesai.");
                     break;
 
