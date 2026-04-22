@@ -1,6 +1,7 @@
 package Buku;
 public class Utama {
     public static void jalankanProgram(){
+
         Detail b1 = new Daftarbuku("Arah Langkah", "Fiersa Besari", "Sastra Perjalanan", "Mediakita", 2018, 3);
         Detail bk1 = new Ketersediaan("Arah Langkah", "Fiersa Besari", true);
         Detail b2 = new Daftarbuku(null, null, null, null, 0, 0);

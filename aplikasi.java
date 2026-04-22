@@ -9,9 +9,9 @@ public class aplikasi {
         int pilihan;
 
         do {
-            System.out.println("===== MENU PERPUSTAKAAN =====");
+            System.out.println("\n ===== MENU PERPUSTAKAAN =====");
             System.out.println("1. Buku");
-            System.out.println("2. Admin");
+            System.out.println("2. Menu 2");
             System.out.println("3. Menu 3");
             System.out.println("4. Keluar");
             System.out.print("Pilih menu: ");
@@ -35,29 +35,14 @@ public class aplikasi {
                             System.out.println("Pilihan salah");
                     }
                     } while (pilih != 1);
-                    break;
                     
 
                 case 2:
-                    System.out.println("\n--- LOGIN ADMIN ---");
-                    adminlogin login= new adminlogin();
-
-                    System.out.print("Username:" );
-                    String username= s.nextLine();
-                    System.out.print("Password:" );
-                    String password= s.nextLine();
-
-                    if(login.ceklogin(username, password)){
-                        admin a= login.getadminAktif();
-                        System.out.println("Login berhasil! Selamat datang "+ a.getusername());
-                    }else{
-                        System.out.println("Login gagal. Ulangi kembali");
-                    }
-
-                  
+                    System.out.println("isi ya teman");
                     break;
 
                 case 3:
+                    datakelas
                     System.out.println("Isi ya teman");
                     break;
 
