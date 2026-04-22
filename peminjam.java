@@ -2,7 +2,7 @@ import java.util.*;
 public class peminjam extends manusia {
     private int jumlahpinjam = 0;
     private String bataspinjam;
-    public peminjam(String nama, String nim, String nomorhp, int jumlahpinjam, String bataspinjam) {
+    protected peminjam(String nama, String nim, String nomorhp, int jumlahpinjam, String bataspinjam) {
         super(nama, nim, nomorhp);
         this.jumlahpinjam = jumlahpinjam;
         this.bataspinjam = bataspinjam;
@@ -15,9 +15,9 @@ public class peminjam extends manusia {
             System.out.println(" batas pinjam: " + bataspinjam);
     }
     
-    private List<peminjam> daftarpeminjam = new ArrayList<>();
+    private static List<peminjam> daftarpeminjam = new ArrayList<>();
 
-    public boolean tambahpeminjam (peminjam Peminjam){
+    public static boolean tambahpeminjam (peminjam Peminjam){
     
         if (Peminjam.getnama() == null || Peminjam.getnim() == null || Peminjam.getnomorhp() == null){
             System.out.println("data yang anda masukkan tidak lengkap! mohon isi secara lengkap");
@@ -27,10 +27,9 @@ public class peminjam extends manusia {
             System.out.println("data dengan nim " + Peminjam.getnim() + " sudah ada! mohon masukkan nim yang berbeda");
         } 
         daftarpeminjam.add(Peminjam); 
-        System.out.println( Peminjam.getnama() + " berhasil ditambahkan sebagai peminjam");
         return true;
     }
-    public peminjam carinim (String nim){
+    public static peminjam carinim (String nim){
         for (peminjam Peminjam : daftarpeminjam){
             if (Peminjam.getnim().equals(nim)){
                 return Peminjam;
@@ -39,7 +38,7 @@ public class peminjam extends manusia {
         System.out.println("data peminjam dengan nim " + nim + " tidak ditemukan");
         return null;
     }
-    public peminjam carinama (String nama){
+    public static peminjam carinama (String nama){
         for (peminjam Peminjam : daftarpeminjam){
             if (Peminjam.getnama().equals(nama)){
                 return Peminjam;
@@ -48,7 +47,7 @@ public class peminjam extends manusia {
         System.out.println("data peminjam dengan nim " + nama + " tidak ditemukan");
         return null;
     }
-    public peminjam carinoHP (String nomorhp){
+    public static  peminjam carinoHP (String nomorhp){
         for (peminjam Peminjam : daftarpeminjam){
             if (Peminjam.getnomorhp().equals(nomorhp)){
                 return Peminjam;
@@ -58,7 +57,7 @@ public class peminjam extends manusia {
         return null;
     }
 
-    private void dataKelas(){
+    protected static void dataKelas(){
         tambahpeminjam(new peminjam("Achmad Daniel Albar", "09021282530078", "082182297479", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Aditiah Okta Romadhon", "09021282530088", "082268583450", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Adrina Ginata Dinda Harjanti", "09021282530104", "082178552858", 0, "30-12-2026"));
@@ -92,5 +91,12 @@ public class peminjam extends manusia {
         tambahpeminjam(new peminjam("Tuah Shahjahan Arzu", "09021282530084", "081398475318", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Verizka Primallea Gustikanayla", "09021282530105", "087844751664", 0, "30-12-2026"));
     }
-
+     public static manusia login(String username, String password) {
+        for (peminjam p : daftarpeminjam) {
+            if (p.getnama().equals(username) && p.getnim().equals(password)) {
+                return p;
+            }
+        }
+        return null;
+    }
 }
