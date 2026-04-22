@@ -1,7 +1,12 @@
-import java.util.Scanner;
 import Buku.Utama;
+<<<<<<< HEAD
 import Buku.adminlogin;
 import Buku.admin;
+=======
+import Buku.admin;
+import Buku.adminlogin;
+import java.util.Scanner;
+>>>>>>> fb2decd48ee52c00e648e8167aab86a37e63a1ba
 
 public class aplikasi {
     public static void main(String[] args) {
@@ -11,8 +16,13 @@ public class aplikasi {
         do {
             System.out.println("\n ===== MENU PERPUSTAKAAN =====");
             System.out.println("1. Buku");
+<<<<<<< HEAD
             System.out.println("2. Menu 2");
             System.out.println("3. Menu 3");
+=======
+            System.out.println("2. Notifikasi");
+            System.out.println("3. Admin");
+>>>>>>> fb2decd48ee52c00e648e8167aab86a37e63a1ba
             System.out.println("4. Keluar");
             System.out.print("Pilih menu: ");
             pilihan = s.nextInt();
@@ -42,9 +52,20 @@ public class aplikasi {
                     break;
 
                 case 3:
-                    datakelas
-                    System.out.println("Isi ya teman");
-                    break;
+                    System.out.println("\n--- LOGIN ADMIN ---");
+                    adminlogin login= new adminlogin();
+
+                    System.out.print("Username:" );
+                    String username= s.nextLine();
+                    System.out.print("Password:" );
+                    String password= s.nextLine();
+
+                    if(login.ceklogin(username, password)){
+                        admin a= login.getadminAktif();
+                        System.out.println("Login berhasil! Selamat datang "+ a.getusername());
+                    }else{
+                        System.out.println("Login gagal. Ulangi kembali");
+                    }
 
                 case 4:
                     System.out.println("Program selesai.");
