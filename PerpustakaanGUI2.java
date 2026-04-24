@@ -18,7 +18,7 @@ public class PerpustakaanGUI2 {
 
     protected static manusia penggunaAktif;
 
-    public void main(String[] args) {
+    public static void main(String[] args) {
         frame = new JFrame("Perpustakaan Digital");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1024, 768);
@@ -28,7 +28,7 @@ public class PerpustakaanGUI2 {
         panelUtama = new JPanel(navigasi);
 
         panelUtama.add(buatHalamanLogin(), "HALAMAN_LOGIN");
-        panelUtama.add(buatHalamanDashboard(), "HALAMAN_DASHBOARD");
+
 
         frame.add(panelUtama);
         frame.setVisible(true);
@@ -80,14 +80,17 @@ public class PerpustakaanGUI2 {
 
         btnLogin.addActionListener(e -> { String username = txtUser.getText();
             String password = new String(txtPass.getPassword());
+            if (username.isEmpty() || password.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Isi username & password!");
+                return;}
               penggunaAktif = peminjam.login(username, password);
-
              if (penggunaAktif != null ) {
 
                 JOptionPane.showMessageDialog(null, 
                  "Login berhasil sebagai " + penggunaAktif.getnama() + "!"); 
-
-            navigasi.show(panelUtama, "HALAMAN_DASHBOARD");
+                    panelUtama.remove(panelUtama.getComponentCount() - 1);
+                    navigasi.show(panelUtama, "HALAMAN_DASHBOARD");
+                    panelUtama.add(buatHalamanDashboard(), "HALAMAN_DASHBOARD");
 
             } else {
                 JOptionPane.showMessageDialog(null, "Login gagal!");}});
@@ -108,6 +111,9 @@ public class PerpustakaanGUI2 {
     private static JPanel buatHalamanDashboard() {
         JPanel dashboard = new JPanel(new BorderLayout());
         dashboard.setBackground(WARNA_BG);
+
+        String nama = (penggunaAktif != null) ? penggunaAktif.getnama() : "Guest";
+        String nim  = (penggunaAktif != null) ? penggunaAktif.getnim() : "-";
 
         JPanel sidebar = new JPanel();
         sidebar.setBackground(WARNA_KARTU);
@@ -184,11 +190,11 @@ public class PerpustakaanGUI2 {
         teksProfil.setBackground(WARNA_KARTU);
         teksProfil.setBorder(new EmptyBorder(0, 12, 0, 0));
         
-        JLabel namaUser = new JLabel(penggunaAktif.getnama());
+        JLabel namaUser = new JLabel(nama);
         namaUser.setForeground(WARNA_TEKS);
         namaUser.setFont(new Font("Arial", Font.BOLD, 13));
         
-        JLabel nimUser = new JLabel(penggunaAktif.getnim());
+        JLabel nimUser = new JLabel(nim);
         nimUser.setForeground(WARNA_SUB_TEKS);
         nimUser.setFont(new Font("Arial", Font.PLAIN, 11));
         
