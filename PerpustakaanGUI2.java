@@ -231,7 +231,10 @@ public class PerpustakaanGUI2 {
         sapaan.setForeground(WARNA_TEKS);
 
         JButton btnLogout = new JButton("Logout");
-        btnLogout.addActionListener(e -> navigasi.show(panelUtama, "HALAMAN_LOGIN"));
+        btnLogout.addActionListener(e -> {
+            penggunaAktif = null;
+            navigasi.show(panelUtama, "HALAMAN_LOGIN");
+        });
 
         header.add(sapaan, BorderLayout.WEST);
         header.add(btnLogout, BorderLayout.EAST);
