@@ -79,11 +79,11 @@ public class peminjam extends manusia {
         tambahpeminjam(new peminjam("Muhammad Raffa Al Ra'uf", "09021282530112", "082289413445", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Muhammad Rasyid Ridho", "09021282530095", "082162335558", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Muhammad Rochman", "09021282530079",  "082179337100", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Noufal Izdihar" ," 09021282530093", "081271026897", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Noufal Izdihar" ,"09021282530093", "081271026897", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Pijar Yefa Tri Putra" ,"09021282530108", "083116870745", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Raditya Derry Armadani", "09021282530094", "082184381231", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Raditya Ihsan", "09021282530091", "082373878848", 0, "30-12-2026"));
-        tambahpeminjam(new peminjam("Rifai Pideksa Sinulingga"," 09021282530109", "081360303029", 0, "30-12-2026"));
+        tambahpeminjam(new peminjam("Rifai Pideksa Sinulingga","09021282530109", "081360303029", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Rizky Aditya Kairupan", "09021282530090", "083841192991", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Shafin Maulana", "09021282530103", "082181363615", 0, "30-12-2026"));
         tambahpeminjam(new peminjam("Shakilla Marsya", "09021282530086", "089602160807", 0, "30-12-2026"));
