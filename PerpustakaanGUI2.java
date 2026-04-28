@@ -88,9 +88,10 @@ public class PerpustakaanGUI2 {
 
                 JOptionPane.showMessageDialog(null, 
                  "Login berhasil sebagai " + penggunaAktif.getnama() + "!"); 
-                    panelUtama.remove(panelUtama.getComponentCount() - 1);
-                    navigasi.show(panelUtama, "HALAMAN_DASHBOARD");
                     panelUtama.add(buatHalamanDashboard(), "HALAMAN_DASHBOARD");
+                    navigasi.show(panelUtama, "HALAMAN_DASHBOARD");
+                    panelUtama.revalidate();
+                    panelUtama.repaint();
 
             } else {
                 JOptionPane.showMessageDialog(null, "Login gagal!");}});
