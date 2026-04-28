@@ -35,7 +35,55 @@ public class PerpustakaanGUI2 {
 
         peminjam.dataKelas();
     }
+    private static void tambahPlaceholder(JTextField field, String placeholder) {
+    field.setText(placeholder);
+    field.setForeground(WARNA_SUB_TEKS);
 
+    field.addFocusListener(new java.awt.event.FocusAdapter() {
+        @Override
+        public void focusGained(java.awt.event.FocusEvent e) {
+            // Saat diklik, hapus placeholder
+            if (field.getText().equals(placeholder)) {
+                field.setText("");
+                field.setForeground(WARNA_TEKS);
+            }
+        }
+
+        @Override
+        public void focusLost(java.awt.event.FocusEvent e) {
+            // Saat diklik tempat lain & field kosong, tampilkan placeholder lagi
+            if (field.getText().isEmpty()) {
+                field.setText(placeholder);
+                field.setForeground(WARNA_SUB_TEKS);
+            }
+        }
+    });
+}
+    private static void tambahPlaceholderPassword(JPasswordField field, String placeholder) {
+    field.setText(placeholder);
+    field.setForeground(WARNA_SUB_TEKS);
+    field.setEchoChar((char) 0); // tampilkan teks placeholder dulu
+
+    field.addFocusListener(new java.awt.event.FocusAdapter() {
+        @Override
+        public void focusGained(java.awt.event.FocusEvent e) {
+            if (String.valueOf(field.getPassword()).equals(placeholder)) {
+                field.setText("");
+                field.setForeground(WARNA_TEKS);
+                field.setEchoChar('•'); // aktifkan karakter sensor
+            }
+        }
+
+        @Override
+        public void focusLost(java.awt.event.FocusEvent e) {
+            if (field.getPassword().length == 0) {
+                field.setText(placeholder);
+                field.setForeground(WARNA_SUB_TEKS);
+                field.setEchoChar((char) 0); // tampilkan teks placeholder lagi
+            }
+        }
+    });
+}
     private static JPanel buatHalamanLogin() {
         JPanel loginPanel = new JPanel(new GridBagLayout());
         loginPanel.setBackground(WARNA_BG);
@@ -51,7 +99,8 @@ public class PerpustakaanGUI2 {
         judul.setFont(new Font("Arial", Font.BOLD, 24));
         judul.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JTextField txtUser = new JTextField("Username");
+        JTextField txtUser = new JTextField();
+        tambahPlaceholder(txtUser, "Username");
         txtUser.setBackground(WARNA_INPUT);
         txtUser.setForeground(WARNA_SUB_TEKS);
         txtUser.setCaretColor(WARNA_TEKS);
@@ -61,7 +110,8 @@ public class PerpustakaanGUI2 {
             new EmptyBorder(0, 10, 0, 10)
         ));
 
-        JPasswordField txtPass = new JPasswordField("password" );
+        JPasswordField txtPass = new JPasswordField();
+        tambahPlaceholderPassword(txtPass, "Password");
         txtPass.setBackground(WARNA_INPUT);
         txtPass.setForeground(WARNA_SUB_TEKS);
         txtPass.setCaretColor(WARNA_TEKS);
