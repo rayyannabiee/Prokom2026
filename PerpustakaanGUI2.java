@@ -16,6 +16,8 @@ public class PerpustakaanGUI2 {
     private static JPanel panelUtama;
     private static CardLayout navigasi;
 
+    protected static manusia penggunaAktif;
+
     public static void main(String[] args) {
         frame = new JFrame("Perpustakaan Digital");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -26,12 +28,62 @@ public class PerpustakaanGUI2 {
         panelUtama = new JPanel(navigasi);
 
         panelUtama.add(buatHalamanLogin(), "HALAMAN_LOGIN");
-        panelUtama.add(buatHalamanDashboard(), "HALAMAN_DASHBOARD");
+
 
         frame.add(panelUtama);
         frame.setVisible(true);
-    }
 
+        peminjam.dataKelas();
+    }
+    private static void tambahPlaceholder(JTextField field, String placeholder) {
+    field.setText(placeholder);
+    field.setForeground(WARNA_SUB_TEKS);
+
+    field.addFocusListener(new java.awt.event.FocusAdapter() {
+        @Override
+        public void focusGained(java.awt.event.FocusEvent e) {
+            // Saat diklik, hapus placeholder
+            if (field.getText().equals(placeholder)) {
+                field.setText("");
+                field.setForeground(WARNA_TEKS);
+            }
+        }
+
+        @Override
+        public void focusLost(java.awt.event.FocusEvent e) {
+            // Saat diklik tempat lain & field kosong, tampilkan placeholder lagi
+            if (field.getText().isEmpty()) {
+                field.setText(placeholder);
+                field.setForeground(WARNA_SUB_TEKS);
+            }
+        }
+    });
+}
+    private static void tambahPlaceholderPassword(JPasswordField field, String placeholder) {
+    field.setText(placeholder);
+    field.setForeground(WARNA_SUB_TEKS);
+    field.setEchoChar((char) 0); // tampilkan teks placeholder dulu
+
+    field.addFocusListener(new java.awt.event.FocusAdapter() {
+        @Override
+        public void focusGained(java.awt.event.FocusEvent e) {
+            if (String.valueOf(field.getPassword()).equals(placeholder)) {
+                field.setText("");
+                field.setForeground(WARNA_TEKS);
+                field.setEchoChar('•'); // aktifkan karakter sensor
+            }
+        }
+
+        @Override
+        public void focusLost(java.awt.event.FocusEvent e) {
+            if (field.getPassword().length == 0) {
+                field.setText(placeholder);
+                field.setForeground(WARNA_SUB_TEKS);
+                field.setEchoChar((char) 0); // tampilkan teks placeholder lagi
+            }
+        }
+    });
+}
     private static JPanel buatHalamanLogin() {
         JPanel loginPanel = new JPanel(new GridBagLayout());
         loginPanel.setBackground(WARNA_BG);
@@ -47,7 +99,8 @@ public class PerpustakaanGUI2 {
         judul.setFont(new Font("Arial", Font.BOLD, 24));
         judul.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JTextField txtUser = new JTextField("Username / NIM");
+        JTextField txtUser = new JTextField();
+        tambahPlaceholder(txtUser, "Username");
         txtUser.setBackground(WARNA_INPUT);
         txtUser.setForeground(WARNA_SUB_TEKS);
         txtUser.setCaretColor(WARNA_TEKS);
@@ -58,6 +111,7 @@ public class PerpustakaanGUI2 {
         ));
 
         JPasswordField txtPass = new JPasswordField();
+        tambahPlaceholderPassword(txtPass, "Password");
         txtPass.setBackground(WARNA_INPUT);
         txtPass.setForeground(WARNA_SUB_TEKS);
         txtPass.setCaretColor(WARNA_TEKS);
@@ -67,14 +121,30 @@ public class PerpustakaanGUI2 {
             new EmptyBorder(0, 10, 0, 10)
         ));
 
-        JButton btnLogin = new JButton("Student Login");
+        JButton btnLogin = new JButton("Login");
         btnLogin.setBackground(WARNA_AKSEN);
         btnLogin.setForeground(Color.WHITE);
         btnLogin.setFocusPainted(false);
         btnLogin.setMaximumSize(new Dimension(280, 40));
         btnLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        btnLogin.addActionListener(e -> navigasi.show(panelUtama, "HALAMAN_DASHBOARD"));
+        btnLogin.addActionListener(e -> { String username = txtUser.getText();
+            String password = new String(txtPass.getPassword());
+            if (username.isEmpty() || password.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Isi username & password!");
+                return;}
+              penggunaAktif = peminjam.login(username, password);
+             if (penggunaAktif != null ) {
+
+                JOptionPane.showMessageDialog(null, 
+                 "Login berhasil sebagai " + penggunaAktif.getnama() + "!"); 
+                    panelUtama.add(buatHalamanDashboard(), "HALAMAN_DASHBOARD");
+                    navigasi.show(panelUtama, "HALAMAN_DASHBOARD");
+                    panelUtama.revalidate();
+                    panelUtama.repaint();
+
+            } else {
+                JOptionPane.showMessageDialog(null, "Login gagal!");}});
 
         kartuLogin.add(Box.createVerticalStrut(50));
         kartuLogin.add(judul);
@@ -92,6 +162,9 @@ public class PerpustakaanGUI2 {
     private static JPanel buatHalamanDashboard() {
         JPanel dashboard = new JPanel(new BorderLayout());
         dashboard.setBackground(WARNA_BG);
+
+        String nama = (penggunaAktif != null) ? penggunaAktif.getnama() : "Guest";
+        String nim  = (penggunaAktif != null) ? penggunaAktif.getnim() : "-";
 
         JPanel sidebar = new JPanel();
         sidebar.setBackground(WARNA_KARTU);
@@ -168,11 +241,11 @@ public class PerpustakaanGUI2 {
         teksProfil.setBackground(WARNA_KARTU);
         teksProfil.setBorder(new EmptyBorder(0, 12, 0, 0));
         
-        JLabel namaUser = new JLabel("M. Bolkiah Ayesha ...");
+        JLabel namaUser = new JLabel(nama);
         namaUser.setForeground(WARNA_TEKS);
         namaUser.setFont(new Font("Arial", Font.BOLD, 13));
         
-        JLabel nimUser = new JLabel("09021282530106");
+        JLabel nimUser = new JLabel(nim);
         nimUser.setForeground(WARNA_SUB_TEKS);
         nimUser.setFont(new Font("Arial", Font.PLAIN, 11));
         
@@ -203,12 +276,15 @@ public class PerpustakaanGUI2 {
         header.setBackground(WARNA_BG);
         header.setBorder(new EmptyBorder(20, 30, 20, 30));
 
-        JLabel sapaan = new JLabel("Hello, M. Bolkiah!");
+        JLabel sapaan = new JLabel("helo " + penggunaAktif.getnama() + "!");
         sapaan.setFont(new Font("Arial", Font.BOLD, 22));
         sapaan.setForeground(WARNA_TEKS);
 
         JButton btnLogout = new JButton("Logout");
-        btnLogout.addActionListener(e -> navigasi.show(panelUtama, "HALAMAN_LOGIN"));
+        btnLogout.addActionListener(e -> {
+            penggunaAktif = null;
+            navigasi.show(panelUtama, "HALAMAN_LOGIN");
+        });
 
         header.add(sapaan, BorderLayout.WEST);
         header.add(btnLogout, BorderLayout.EAST);
