@@ -2,6 +2,9 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
+import Buku.admin;
+import Buku.adminlogin;
+
 public class PerpustakaanGUI2 {
 
     private static final Color WARNA_BG = new Color(243, 244, 246);
@@ -17,6 +20,8 @@ public class PerpustakaanGUI2 {
     private static CardLayout navigasi;
 
     protected static manusia penggunaAktif;
+    private static adminlogin adminSystem = new adminlogin();
+    private static admin adminAktif;
 
     public static void main(String[] args) {
         frame = new JFrame("Perpustakaan Digital");
@@ -128,23 +133,44 @@ public class PerpustakaanGUI2 {
         btnLogin.setMaximumSize(new Dimension(280, 40));
         btnLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        btnLogin.addActionListener(e -> { String username = txtUser.getText();
-            String password = new String(txtPass.getPassword());
-            if (username.isEmpty() || password.isEmpty()) {
-                JOptionPane.showMessageDialog(null, "Isi username & password!");
-                return;}
-              penggunaAktif = peminjam.login(username, password);
-             if (penggunaAktif != null ) {
+        btnLogin.addActionListener(e -> { 
+        String username = txtUser.getText();
+        String password = new String(txtPass.getPassword());
 
-                JOptionPane.showMessageDialog(null, 
-                 "Login berhasil sebagai " + penggunaAktif.getnama() + "!"); 
-                    panelUtama.add(buatHalamanDashboard(), "HALAMAN_DASHBOARD");
-                    navigasi.show(panelUtama, "HALAMAN_DASHBOARD");
-                    panelUtama.revalidate();
-                    panelUtama.repaint();
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Isi username & password!");
+        return;
+        }
 
-            } else {
-                JOptionPane.showMessageDialog(null, "Login gagal!");}});
+        if (adminSystem.ceklogin(username, password)) {
+        adminAktif = adminSystem.getadminAktif();
+
+        JOptionPane.showMessageDialog(null, 
+            "Login berhasil sebagai ADMIN: " + adminAktif.getusername());
+
+        
+        panelUtama.add(buatHalamanDashboard(), "HALAMAN_DASHBOARD");
+        navigasi.show(panelUtama, "HALAMAN_DASHBOARD");
+        panelUtama.revalidate();
+        panelUtama.repaint();
+        return;
+        }
+
+        penggunaAktif = peminjam.login(username, password);
+
+        if (penggunaAktif != null ) {
+        JOptionPane.showMessageDialog(null, 
+            "Login berhasil sebagai " + penggunaAktif.getnama() + "!");
+
+        panelUtama.add(buatHalamanDashboard(), "HALAMAN_DASHBOARD");
+        navigasi.show(panelUtama, "HALAMAN_DASHBOARD");
+        panelUtama.revalidate();
+        panelUtama.repaint();
+
+        } else {
+        JOptionPane.showMessageDialog(null, "Login gagal!");
+        }
+        });
 
         kartuLogin.add(Box.createVerticalStrut(50));
         kartuLogin.add(judul);
@@ -163,8 +189,19 @@ public class PerpustakaanGUI2 {
         JPanel dashboard = new JPanel(new BorderLayout());
         dashboard.setBackground(WARNA_BG);
 
-        String nama = (penggunaAktif != null) ? penggunaAktif.getnama() : "Guest";
-        String nim  = (penggunaAktif != null) ? penggunaAktif.getnim() : "-";
+        String nama;
+        String nim;
+
+        if (adminAktif != null) {
+        nama = adminAktif.getusername();
+        nim = "ADMIN";
+        } else if (penggunaAktif != null) {
+        nama = penggunaAktif.getnama();
+        nim = penggunaAktif.getnim();
+        } else {
+        nama = "Guest";
+        nim = "-";
+        }
 
         JPanel sidebar = new JPanel();
         sidebar.setBackground(WARNA_KARTU);
@@ -282,8 +319,9 @@ public class PerpustakaanGUI2 {
 
         JButton btnLogout = new JButton("Logout");
         btnLogout.addActionListener(e -> {
-            penggunaAktif = null;
-            navigasi.show(panelUtama, "HALAMAN_LOGIN");
+        penggunaAktif = null;
+        adminAktif = null;
+        navigasi.show(panelUtama, "HALAMAN_LOGIN");
         });
 
         header.add(sapaan, BorderLayout.WEST);
