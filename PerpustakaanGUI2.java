@@ -31,14 +31,13 @@ public class PerpustakaanGUI2 {
 
         navigasi = new CardLayout();
         panelUtama = new JPanel(navigasi);
-
         panelUtama.add(buatHalamanLogin(), "HALAMAN_LOGIN");
-
 
         frame.add(panelUtama);
         frame.setVisible(true);
 
         peminjam.dataKelas();
+        Buku.Utama.jalankanProgram();
     }
     private static void tambahPlaceholder(JTextField field, String placeholder) {
     field.setText(placeholder);
@@ -331,9 +330,10 @@ public class PerpustakaanGUI2 {
         gridBuku.setBackground(WARNA_BG);
         gridBuku.setBorder(new EmptyBorder(0, 30, 30, 30));
 
-        for(int i = 1; i <= 6; i++) {
-            gridBuku.add(buatKartuBuku("Buku Contoh " + i, "Penulis " + i));
-        }
+        for (Buku.Daftarbuku buku : Buku.Utama.getDaftarBuku()) {
+            boolean tersedia = Buku.Utama.isTersedia(buku.getJudul());
+            gridBuku.add(buatKartuBuku(buku, tersedia));
+}
 
         JScrollPane scroll = new JScrollPane(gridBuku);
         scroll.setBorder(null);
@@ -348,36 +348,51 @@ public class PerpustakaanGUI2 {
         return dashboard;
     }
 
-    private static JPanel buatKartuBuku(String judul, String penulis) {
-        JPanel kartu = new JPanel(new BorderLayout());
-        kartu.setBackground(WARNA_KARTU);
-        kartu.setBorder(new LineBorder(WARNA_BORDER, 1));
+    private static JPanel buatKartuBuku(Buku.Daftarbuku buku, boolean tersedia) {
+    JPanel kartu = new JPanel(new BorderLayout());
+    kartu.setBackground(WARNA_KARTU);
+    kartu.setBorder(new LineBorder(WARNA_BORDER, 1));
 
-        JPanel areaGambar = new JPanel();
-        areaGambar.setBackground(new Color(243, 244, 246));
-        areaGambar.setPreferredSize(new Dimension(0, 120));
-        areaGambar.add(new JLabel("Cover Buku"));
+    JPanel areaGambar = new JPanel();
+    areaGambar.setBackground(new Color(243, 244, 246));
+    areaGambar.setPreferredSize(new Dimension(0, 120));
+    areaGambar.add(new JLabel("📖 " + buku.getGenre()));
 
-        JPanel info = new JPanel(new GridLayout(3, 1));
-        info.setBackground(WARNA_KARTU);
-        info.setBorder(new EmptyBorder(10, 10, 10, 10));
+    JPanel info = new JPanel(new GridLayout(5, 1));
+    info.setBackground(WARNA_KARTU);
+    info.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        JLabel lJudul = new JLabel(judul);
-        lJudul.setForeground(WARNA_TEKS);
-        JLabel lPenulis = new JLabel(penulis);
-        lPenulis.setForeground(WARNA_SUB_TEKS);
-        JButton btnPinjam = new JButton("Pinjam");
-        btnPinjam.setBackground(WARNA_AKSEN);
-        btnPinjam.setForeground(Color.WHITE);
-        btnPinjam.setFocusPainted(false);
+    JLabel lJudul    = new JLabel(buku.getJudul());
+    lJudul.setForeground(WARNA_TEKS);
+    lJudul.setFont(new Font("Arial", Font.BOLD, 13));
 
-        info.add(lJudul);
-        info.add(lPenulis);
-        info.add(btnPinjam);
+    JLabel lPenulis  = new JLabel(buku.getPenulis());
+    lPenulis.setForeground(WARNA_SUB_TEKS);
 
-        kartu.add(areaGambar, BorderLayout.NORTH);
-        kartu.add(info, BorderLayout.CENTER);
+    JLabel lTahun    = new JLabel("Terbit: " + buku.getTahunterbit());
+    lTahun.setForeground(WARNA_SUB_TEKS);
+    lTahun.setFont(new Font("Arial", Font.PLAIN, 11));
 
-        return kartu;
+    // Warna badge status ketersediaan
+    JLabel lStatus   = new JLabel(tersedia ? "● Tersedia" : "● Kosong");
+    lStatus.setForeground(tersedia ? new Color(22, 163, 74) : new Color(220, 38, 38));
+    lStatus.setFont(new Font("Arial", Font.BOLD, 11));
+
+    JButton btnPinjam = new JButton(tersedia ? "Pinjam" : "Tidak Tersedia");
+    btnPinjam.setBackground(tersedia ? WARNA_AKSEN : WARNA_SUB_TEKS);
+    btnPinjam.setForeground(Color.WHITE);
+    btnPinjam.setFocusPainted(false);
+    btnPinjam.setEnabled(tersedia); // nonaktifkan tombol jika kosong
+
+    info.add(lJudul);
+    info.add(lPenulis);
+    info.add(lTahun);
+    info.add(lStatus);
+    info.add(btnPinjam);
+
+    kartu.add(areaGambar, BorderLayout.NORTH);
+    kartu.add(info, BorderLayout.CENTER);
+
+    return kartu;
     }
 }
