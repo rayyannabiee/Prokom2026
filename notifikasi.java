@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 import java.util.Scanner;
 
 public abstract class Notifikasi implements KirimNotif {
@@ -63,8 +62,3 @@ public abstract class Notifikasi implements KirimNotif {
         } while (pilih != 3);
     }
 }
-=======
-public class notifikasi { 
-    
-}
->>>>>>> Stashed changes
