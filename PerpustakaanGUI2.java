@@ -1,9 +1,9 @@
-import Buku.admin;
-import Buku.adminlogin;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
+import Buku.admin;
+import Buku.adminlogin;
 public class PerpustakaanGUI2 {
 
     private static final Color WARNA_BG = new Color(243, 244, 246);
