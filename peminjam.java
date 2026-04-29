@@ -15,7 +15,6 @@ public class peminjam extends manusia {
             System.out.println(" batas pinjam: " + bataspinjam);
     }
     
-<<<<<<< Updated upstream
     private static List<peminjam> daftarpeminjam = new ArrayList<>();
 
     public static boolean tambahpeminjam (peminjam Peminjam){
@@ -99,8 +98,7 @@ public class peminjam extends manusia {
             }
         }
         return null;
+    
     }
 }
-=======
-}
->>>>>>> Stashed changes
+
