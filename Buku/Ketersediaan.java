@@ -3,12 +3,18 @@ package Buku;
 public class Ketersediaan extends Detail {
     private boolean tersedia;
 
-    public Ketersediaan(String judul, String penulis, boolean tersedia){
+    public Ketersediaan(String judul, String penulis, boolean tersedia) {
         super(judul, penulis);
         this.tersedia = tersedia;
     }
+
+    // Tambahkan getter ini
+    public boolean getTersedia() {
+        return tersedia;
+    }
+
     @Override
-    public void infoBuku(){
+    public void infoBuku() {
         String status = tersedia ? "Tersedia" : "Kosong";
         System.out.println("|Ketersediaan   : " + status);
     }
