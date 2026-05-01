@@ -351,29 +351,43 @@ public class PerpustakaanGUI2 {
     JPanel kartu = new JPanel(new BorderLayout());
     kartu.setBackground(WARNA_KARTU);
     kartu.setBorder(new LineBorder(WARNA_BORDER, 1));
+    kartu.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-    JPanel areaGambar = new JPanel();
-    areaGambar.setBackground(new Color(243, 244, 246));
-    areaGambar.setPreferredSize(new Dimension(0, 120));
-    areaGambar.add(new JLabel("📖 " + buku.getGenre()));
+    JPanel areaGambar = new JPanel(new BorderLayout());
+    areaGambar.setPreferredSize(new Dimension(0, 160));
+    areaGambar.setBackground(new Color(229, 231, 235));
 
-    JPanel info = new JPanel(new GridLayout(5, 1));
+    String path = buku.getImagePath();
+    java.io.File file = new java.io.File(path);
+
+    if (file.exists()) {
+        try {
+            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(file);
+            Image scaled = img.getScaledInstance(180, 160, Image.SCALE_SMOOTH);
+            JLabel lblGambar = new JLabel(new ImageIcon(scaled));
+            lblGambar.setHorizontalAlignment(SwingConstants.CENTER);
+            areaGambar.add(lblGambar, BorderLayout.CENTER);
+        } catch (Exception ex) {
+            areaGambar.add(labelFallback(buku.getGenre()), BorderLayout.CENTER);
+        }
+    } else {
+        // Jika file tidak ditemukan, tampilkan placeholder
+        areaGambar.add(labelFallback(buku.getGenre()), BorderLayout.CENTER);
+    }
+
+    JPanel info = new JPanel(new GridLayout(4, 1));
     info.setBackground(WARNA_KARTU);
     info.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-    JLabel lJudul    = new JLabel(buku.getJudul());
+    JLabel lJudul = new JLabel(buku.getJudul());
     lJudul.setForeground(WARNA_TEKS);
     lJudul.setFont(new Font("Arial", Font.BOLD, 13));
 
-    JLabel lPenulis  = new JLabel(buku.getPenulis());
+    JLabel lPenulis = new JLabel(buku.getPenulis());
     lPenulis.setForeground(WARNA_SUB_TEKS);
+    lPenulis.setFont(new Font("Arial", Font.PLAIN, 11));
 
-    JLabel lTahun    = new JLabel("Terbit: " + buku.getTahunterbit());
-    lTahun.setForeground(WARNA_SUB_TEKS);
-    lTahun.setFont(new Font("Arial", Font.PLAIN, 11));
-
-    // Warna badge status ketersediaan
-    JLabel lStatus   = new JLabel(tersedia ? "● Tersedia" : "● Kosong");
+    JLabel lStatus = new JLabel(tersedia ? "● Tersedia" : "● Kosong");
     lStatus.setForeground(tersedia ? new Color(22, 163, 74) : new Color(220, 38, 38));
     lStatus.setFont(new Font("Arial", Font.BOLD, 11));
 
@@ -381,17 +395,129 @@ public class PerpustakaanGUI2 {
     btnPinjam.setBackground(tersedia ? WARNA_AKSEN : WARNA_SUB_TEKS);
     btnPinjam.setForeground(Color.WHITE);
     btnPinjam.setFocusPainted(false);
-    btnPinjam.setEnabled(tersedia); // nonaktifkan tombol jika kosong
+    btnPinjam.setEnabled(tersedia);
 
     info.add(lJudul);
     info.add(lPenulis);
-    info.add(lTahun);
     info.add(lStatus);
     info.add(btnPinjam);
 
     kartu.add(areaGambar, BorderLayout.NORTH);
     kartu.add(info, BorderLayout.CENTER);
 
+    kartu.addMouseListener(new java.awt.event.MouseAdapter() {
+        @Override
+        public void mouseClicked(java.awt.event.MouseEvent e) {
+            tampilkanPopupBuku(buku, tersedia);
+        }
+        @Override
+        public void mouseEntered(java.awt.event.MouseEvent e) {
+            kartu.setBorder(new LineBorder(WARNA_AKSEN, 2));
+        }
+        @Override
+        public void mouseExited(java.awt.event.MouseEvent e) {
+            kartu.setBorder(new LineBorder(WARNA_BORDER, 1));
+        }
+    });
+
     return kartu;
+}
+
+private static JLabel labelFallback(String genre) {
+    JLabel lbl = new JLabel("<html><center><br>" + genre + "</center></html>",
+                             SwingConstants.CENTER);
+    lbl.setForeground(WARNA_SUB_TEKS);
+    lbl.setFont(new Font("Arial", Font.PLAIN, 13));
+    return lbl;
+}
+
+private static void tampilkanPopupBuku(Buku.Daftarbuku buku, boolean tersedia) {
+    JDialog popup = new JDialog(frame, buku.getJudul(), true);
+    popup.setSize(480, 520);
+    popup.setLocationRelativeTo(frame);
+    popup.setLayout(new BorderLayout());
+
+    JPanel isiPopup = new JPanel(new BorderLayout(0, 15));
+    isiPopup.setBackground(WARNA_KARTU);
+    isiPopup.setBorder(new EmptyBorder(25, 25, 25, 25));
+
+    JPanel coverPopup = new JPanel(new BorderLayout());
+    coverPopup.setBackground(new Color(229, 231, 235));
+    coverPopup.setPreferredSize(new Dimension(0, 200));
+
+    String path = buku.getImagePath();
+    java.io.File file = new java.io.File(path);
+    if (file.exists()) {
+        try {
+            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(file);
+            Image scaled = img.getScaledInstance(140, 200, Image.SCALE_SMOOTH);
+            JLabel lblCover = new JLabel(new ImageIcon(scaled));
+            lblCover.setHorizontalAlignment(SwingConstants.CENTER);
+            coverPopup.add(lblCover, BorderLayout.CENTER);
+        } catch (Exception ex) {
+            coverPopup.add(labelFallback(buku.getGenre()), BorderLayout.CENTER);
+        }
+    } else {
+        coverPopup.add(labelFallback(buku.getGenre()), BorderLayout.CENTER);
     }
+
+    JPanel detailPanel = new JPanel(new GridLayout(5, 1, 0, 5));
+    detailPanel.setBackground(WARNA_KARTU);
+
+    detailPanel.add(buatLabelDetail("Judul    : ", buku.getJudul()));
+    detailPanel.add(buatLabelDetail("Penulis  : ", buku.getPenulis()));
+    detailPanel.add(buatLabelDetail("Genre    : ", buku.getGenre()));
+    detailPanel.add(buatLabelDetail("Penerbit : ", buku.getPenerbit() + " (" + buku.getTahunterbit() + ")"));
+    detailPanel.add(buatLabelDetail("Stok     : ", buku.getJumlah() + " buku"));
+
+    JTextArea txtDeskripsi = new JTextArea(buku.getDeskripsi());
+    txtDeskripsi.setWrapStyleWord(true);
+    txtDeskripsi.setLineWrap(true);
+    txtDeskripsi.setEditable(false);
+    txtDeskripsi.setBackground(new Color(249, 250, 251));
+    txtDeskripsi.setForeground(WARNA_TEKS);
+    txtDeskripsi.setFont(new Font("Arial", Font.PLAIN, 13));
+    txtDeskripsi.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+    JScrollPane scrollDesk = new JScrollPane(txtDeskripsi);
+    scrollDesk.setBorder(new LineBorder(WARNA_BORDER));
+    scrollDesk.setPreferredSize(new Dimension(0, 100));
+
+    JButton btnTutup = new JButton("Tutup");
+    btnTutup.setBackground(WARNA_SUB_TEKS);
+    btnTutup.setForeground(Color.WHITE);
+    btnTutup.setFocusPainted(false);
+    btnTutup.addActionListener(e -> popup.dispose());
+
+    JButton btnPinjamPopup = new JButton(tersedia ? "Pinjam Buku Ini" : "Tidak Tersedia");
+    btnPinjamPopup.setBackground(tersedia ? WARNA_AKSEN : new Color(220, 38, 38));
+    btnPinjamPopup.setForeground(Color.WHITE);
+    btnPinjamPopup.setFocusPainted(false);
+    btnPinjamPopup.setEnabled(tersedia);
+
+    JPanel tombolPanel = new JPanel(new GridLayout(1, 2, 10, 0));
+    tombolPanel.setBackground(WARNA_KARTU);
+    tombolPanel.add(btnTutup);
+    tombolPanel.add(btnPinjamPopup);
+
+    isiPopup.add(coverPopup, BorderLayout.NORTH);
+    isiPopup.add(detailPanel, BorderLayout.CENTER);
+
+    JPanel bawahPopup = new JPanel(new BorderLayout(0, 10));
+    bawahPopup.setBackground(WARNA_KARTU);
+    bawahPopup.add(scrollDesk, BorderLayout.CENTER);
+    bawahPopup.add(tombolPanel, BorderLayout.SOUTH);
+
+    isiPopup.add(bawahPopup, BorderLayout.SOUTH);
+
+    popup.add(isiPopup);
+    popup.setVisible(true);
+}
+
+    private static JLabel buatLabelDetail(String label, String nilai) {
+        JLabel lbl = new JLabel("<html><b>" + label + "</b>" + nilai + "</html>");
+        lbl.setForeground(WARNA_TEKS);
+        lbl.setFont(new Font("Arial", Font.PLAIN, 13));
+        return lbl;
+}
 }
