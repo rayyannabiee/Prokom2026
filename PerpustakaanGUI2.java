@@ -241,24 +241,45 @@ public class PerpustakaanGUI2 {
         teksBuku.setFont(new Font("Arial", Font.BOLD, 15));
         itemBuku.add(teksBuku);
 
-        JPanel itemNotif = new JPanel(new BorderLayout());
+// 🔥 GANTI SELURUH BAGIAN INI
+JPanel itemNotif = new JPanel(new BorderLayout());
+itemNotif.setBackground(WARNA_KARTU);
+itemNotif.setMaximumSize(new Dimension(240, 45));
+itemNotif.setMinimumSize(new Dimension(240, 45)); // TAMBAHAN INI
+itemNotif.setPreferredSize(new Dimension(240, 45)); // TAMBAHAN INI
+itemNotif.setBorder(new EmptyBorder(5, 10, 5, 10));
+itemNotif.setCursor(new Cursor(Cursor.HAND_CURSOR)); // TAMBAHAN INI
+
+JLabel teksNotif = new JLabel(" Notifikasi");
+teksNotif.setForeground(WARNA_SUB_TEKS);
+teksNotif.setFont(new Font("Arial", Font.PLAIN, 15));
+
+JLabel badge = new JLabel("2", SwingConstants.CENTER);
+badge.setForeground(Color.WHITE);
+badge.setBackground(WARNA_AKSEN);
+badge.setOpaque(true);
+badge.setPreferredSize(new Dimension(20, 20));
+badge.setFont(new Font("Arial", Font.BOLD, 11));
+
+itemNotif.add(teksNotif, BorderLayout.WEST);
+itemNotif.add(badge, BorderLayout.EAST);
+
+// 🔥 EVENT LISTENER - HARUS SETELAH ADD COMPONENT
+itemNotif.addMouseListener(new java.awt.event.MouseAdapter() {
+    @Override
+    public void mouseEntered(java.awt.event.MouseEvent e) {
+        itemNotif.setBackground(new Color(239, 246, 255)); // Biru muda
+    }
+    
+    @Override
+    public void mouseExited(java.awt.event.MouseEvent e) {
         itemNotif.setBackground(WARNA_KARTU);
-        itemNotif.setMaximumSize(new Dimension(240, 45));
-        itemNotif.setBorder(new EmptyBorder(5, 10, 5, 10));
-        
-        JLabel teksNotif = new JLabel(" Notifikasi");
-        teksNotif.setForeground(WARNA_SUB_TEKS);
-        teksNotif.setFont(new Font("Arial", Font.PLAIN, 15));
-        
-        JLabel badge = new JLabel("2", SwingConstants.CENTER);
-        badge.setForeground(Color.WHITE);
-        badge.setBackground(WARNA_AKSEN);
-        badge.setOpaque(true);
-        badge.setPreferredSize(new Dimension(20, 20));
-        badge.setFont(new Font("Arial", Font.BOLD, 11));
-        
-        itemNotif.add(teksNotif, BorderLayout.WEST);
-        itemNotif.add(badge, BorderLayout.EAST);
+    }
+    
+    @Override
+    public void mouseClicked(java.awt.event.MouseEvent e) {
+    }
+});
 
         JPanel profilBawah = new JPanel(new BorderLayout());
         profilBawah.setBackground(WARNA_KARTU);
