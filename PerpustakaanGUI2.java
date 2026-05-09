@@ -1,8 +1,7 @@
 import Buku.Daftarbuku;
 import Buku.Utama;
-import Buku.adminlogin;
 import Buku.admin;
-
+import Buku.adminlogin;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -237,18 +236,35 @@ public class PerpustakaanGUI2 extends JFrame {
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
         form.setBorder(new EmptyBorder(28, 0, 0, 0));
 
-        form.add(buatLabelForm("NAMA LENGKAP"));
+        float align = Component.LEFT_ALIGNMENT;
+
+        JLabel lblNama = buatLabelForm("NAMA LENGKAP");
+        lblNama.setAlignmentX(align);
+        form.add(lblNama);
+
         form.add(Box.createVerticalStrut(7));
+
         JTextField txtNama = buatInput("Masukkan nama lengkap...");
         tambahPlaceholder(txtNama, "Masukkan nama lengkap...");
+        txtNama.setAlignmentX(align);
+        txtNama.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         form.add(txtNama);
+
         form.add(Box.createVerticalStrut(18));
 
-        form.add(buatLabelForm("NIM"));
+        // NIM
+        JLabel lblNim = buatLabelForm("NIM");
+        lblNim.setAlignmentX(align);
+        form.add(lblNim);
+
         form.add(Box.createVerticalStrut(7));
+
         JTextField txtNim = buatInput("Masukkan NIM...");
         tambahPlaceholder(txtNim, "Masukkan NIM...");
+        txtNim.setAlignmentX(align);
+        txtNim.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         form.add(txtNim);
+
         form.add(Box.createVerticalStrut(28));
 
         BrandButton btnLogin = new BrandButton("Masuk");
