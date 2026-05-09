@@ -1,544 +1,1562 @@
+import Buku.Daftarbuku;
+import Buku.Utama;
+import Buku.adminlogin;
+import Buku.admin;
+
 import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.swing.table.DefaultTableModel;
 
-import Buku.admin;
-import Buku.adminlogin;
-public class PerpustakaanGUI2 {
+public class PerpustakaanGUI2 extends JFrame {
 
-    private static final Color WARNA_BG = new Color(243, 244, 246);
-    private static final Color WARNA_KARTU = Color.WHITE;
-    private static final Color WARNA_AKSEN = new Color(37, 99, 235);
-    private static final Color WARNA_INPUT = new Color(249, 250, 251);
-    private static final Color WARNA_TEKS = new Color(17, 24, 39);
-    private static final Color WARNA_SUB_TEKS = new Color(107, 114, 128);
-    private static final Color WARNA_BORDER = new Color(229, 231, 235);
+    // ─────────────────────────────────────────────
+    //  WARNA (Light Theme asli)
+    // ─────────────────────────────────────────────
+    private static final Color C_BG        = new Color(243, 244, 246);
+    private static final Color C_CARD      = Color.WHITE;
+    private static final Color C_AKSEN     = new Color(37, 99, 235);
+    private static final Color C_INPUT     = new Color(249, 250, 251);
+    private static final Color C_TEKS      = new Color(17, 24, 39);
+    private static final Color C_MUTED     = new Color(107, 114, 128);
+    private static final Color C_BORDER    = new Color(229, 231, 235);
+    private static final Color C_HILITE    = new Color(239, 246, 255);
+    private static final Color C_SUCCESS   = new Color(22, 163, 74);
+    private static final Color C_DANGER    = new Color(220, 38, 38);
+    private static final Color C_WARN_BG   = new Color(254, 249, 195);
+    private static final Color C_WARN_FG   = new Color(146, 64, 14);
 
-    private static JFrame frame;
-    private static JPanel panelUtama;
-    private static CardLayout navigasi;
+    // ─────────────────────────────────────────────
+    //  STATE
+    // ─────────────────────────────────────────────
+    private JPanel     panelUtama;
+    private CardLayout navigasi;
+    private JPanel     dashboardContent;
+    private CardLayout dashboardLayout;
 
-    protected static manusia penggunaAktif;
-    private static adminlogin adminSystem = new adminlogin();
-    private static admin adminAktif;
+    private manusia    penggunaAktif;        // mahasiswa yang login
+    private admin      adminAktif;           // admin yang login
+    private boolean    isAdmin = false;
 
+    private String selectedGenre = "Semua";
+    private final List<PinjamRecord>      riwayatList    = new ArrayList<>();
+    private final Map<String, Boolean>    ketersediaan   = new HashMap<>();  // judul → tersedia
+    private final adminlogin              adminAuth      = new adminlogin();
+
+    // ─────────────────────────────────────────────
+    //  MODEL PINJAM
+    // ─────────────────────────────────────────────
+    private static class PinjamRecord {
+        String     nama, nim, tanggal;
+        Daftarbuku buku;
+        boolean    dipinjam = true;
+        PinjamRecord(String nama, String nim, Daftarbuku buku, String tanggal) {
+            this.nama = nama; this.nim = nim;
+            this.buku = buku; this.tanggal = tanggal;
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    //  MAIN & KONSTRUKTOR
+    // ─────────────────────────────────────────────
     public static void main(String[] args) {
-        frame = new JFrame("Perpustakaan Digital");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1024, 768);
-        frame.setLocationRelativeTo(null);
+        SwingUtilities.invokeLater(() -> new PerpustakaanGUI2().setVisible(true));
+    }
 
-        navigasi = new CardLayout();
-        panelUtama = new JPanel(navigasi);
-        panelUtama.add(buatHalamanLogin(), "HALAMAN_LOGIN");
-
-        frame.add(panelUtama);
-        frame.setVisible(true);
+    public PerpustakaanGUI2() {
+        setTitle("Perpustakaan Digital");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1280, 860);
+        setLocationRelativeTo(null);
+        getContentPane().setBackground(C_BG);
 
         peminjam.dataKelas();
-        Buku.Utama.jalankanProgram();
+        Utama.jalankanProgram();
+
+        // Inisialisasi ketersediaan dari data Utama
+        for (Daftarbuku b : Utama.getDaftarBuku())
+            ketersediaan.put(b.getJudul(), Utama.isTersedia(b.getJudul()));
+
+        navigasi   = new CardLayout();
+        panelUtama = new JPanel(navigasi);
+        panelUtama.setOpaque(false);
+        panelUtama.add(buatLayarPilihLogin(), "PILIH_LOGIN");
+        panelUtama.add(buatLayarLoginMhs(),   "LOGIN_MHS");
+        panelUtama.add(buatLayarLoginAdmin(), "LOGIN_ADMIN");
+        add(panelUtama);
+        navigasi.show(panelUtama, "PILIH_LOGIN");
     }
-    private static void tambahPlaceholder(JTextField field, String placeholder) {
-    field.setText(placeholder);
-    field.setForeground(WARNA_SUB_TEKS);
 
-    field.addFocusListener(new java.awt.event.FocusAdapter() {
-        @Override
-        public void focusGained(java.awt.event.FocusEvent e) {
-            // Saat diklik, hapus placeholder
-            if (field.getText().equals(placeholder)) {
-                field.setText("");
-                field.setForeground(WARNA_TEKS);
-            }
-        }
+    // ═════════════════════════════════════════════
+    //  LAYAR: PILIH TIPE LOGIN
+    // ═════════════════════════════════════════════
+    private JPanel buatLayarPilihLogin() {
+        JPanel bg = new JPanel(new GridBagLayout());
+        bg.setOpaque(false);
 
-        @Override
-        public void focusLost(java.awt.event.FocusEvent e) {
-            // Saat diklik tempat lain & field kosong, tampilkan placeholder lagi
-            if (field.getText().isEmpty()) {
-                field.setText(placeholder);
-                field.setForeground(WARNA_SUB_TEKS);
-            }
-        }
-    });
-}
-    private static void tambahPlaceholderPassword(JPasswordField field, String placeholder) {
-    field.setText(placeholder);
-    field.setForeground(WARNA_SUB_TEKS);
-    field.setEchoChar((char) 0); // tampilkan teks placeholder dulu
+        RoundedPanel kartu = new RoundedPanel(28, C_CARD);
+        kartu.setPreferredSize(new Dimension(480, 420));
+        kartu.setLayout(new BorderLayout());
+        kartu.setBorder(new EmptyBorder(50, 50, 50, 50));
 
-    field.addFocusListener(new java.awt.event.FocusAdapter() {
-        @Override
-        public void focusGained(java.awt.event.FocusEvent e) {
-            if (String.valueOf(field.getPassword()).equals(placeholder)) {
-                field.setText("");
-                field.setForeground(WARNA_TEKS);
-                field.setEchoChar('•'); // aktifkan karakter sensor
-            }
-        }
+        // Top
+        JPanel top = new JPanel();
+        top.setOpaque(false);
+        top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
 
-        @Override
-        public void focusLost(java.awt.event.FocusEvent e) {
-            if (field.getPassword().length == 0) {
-                field.setText(placeholder);
-                field.setForeground(WARNA_SUB_TEKS);
-                field.setEchoChar((char) 0); // tampilkan teks placeholder lagi
-            }
-        }
-    });
-}
-    private static JPanel buatHalamanLogin() {
-        JPanel loginPanel = new JPanel(new GridBagLayout());
-        loginPanel.setBackground(WARNA_BG);
+        JLabel logo = new JLabel("📚");
+        logo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
+        logo.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JPanel kartuLogin = new JPanel();
-        kartuLogin.setBackground(WARNA_KARTU);
-        kartuLogin.setPreferredSize(new Dimension(350, 450));
-        kartuLogin.setLayout(new BoxLayout(kartuLogin, BoxLayout.Y_AXIS));
-        kartuLogin.setBorder(new LineBorder(WARNA_BORDER, 1));
-
-        JLabel judul = new JLabel("Welcome Back");
-        judul.setForeground(WARNA_TEKS);
-        judul.setFont(new Font("Arial", Font.BOLD, 24));
+        JLabel judul = new JLabel("Perpustakaan Digital");
+        judul.setForeground(C_TEKS);
+        judul.setFont(new Font("Inter", Font.BOLD, 26));
         judul.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JTextField txtUser = new JTextField();
-        tambahPlaceholder(txtUser, "Username");
-        txtUser.setBackground(WARNA_INPUT);
-        txtUser.setForeground(WARNA_SUB_TEKS);
-        txtUser.setCaretColor(WARNA_TEKS);
-        txtUser.setMaximumSize(new Dimension(280, 40));
-        txtUser.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(WARNA_BORDER), 
-            new EmptyBorder(0, 10, 0, 10)
-        ));
+        JLabel sub = new JLabel("Pilih tipe akses untuk melanjutkan");
+        sub.setForeground(C_MUTED);
+        sub.setFont(new Font("Inter", Font.PLAIN, 13));
+        sub.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JPasswordField txtPass = new JPasswordField();
-        tambahPlaceholderPassword(txtPass, "Password");
-        txtPass.setBackground(WARNA_INPUT);
-        txtPass.setForeground(WARNA_SUB_TEKS);
-        txtPass.setCaretColor(WARNA_TEKS);
-        txtPass.setMaximumSize(new Dimension(280, 40));
+        top.add(logo);
+        top.add(Box.createVerticalStrut(12));
+        top.add(judul);
+        top.add(Box.createVerticalStrut(6));
+        top.add(sub);
+        kartu.add(top, BorderLayout.NORTH);
+
+        // Tombol pilihan
+        JPanel tombol = new JPanel();
+        tombol.setOpaque(false);
+        tombol.setLayout(new BoxLayout(tombol, BoxLayout.Y_AXIS));
+        tombol.setBorder(new EmptyBorder(40, 0, 0, 0));
+
+        // Card mahasiswa
+        JPanel cardMhs = buatKartuPilihan(
+            "👤", "Masuk sebagai Mahasiswa",
+            "Login menggunakan nama & NIM terdaftar");
+        cardMhs.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        cardMhs.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                navigasi.show(panelUtama, "LOGIN_MHS");
+            }
+            @Override public void mouseEntered(MouseEvent e) {
+                cardMhs.setBorder(new LineBorder(C_AKSEN, 2, true));
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                cardMhs.setBorder(new LineBorder(C_BORDER, 1, true));
+            }
+        });
+
+        // Card admin
+        JPanel cardAdmin = buatKartuPilihan(
+            "🔐", "Masuk sebagai Admin",
+            "Login menggunakan username & password admin");
+        cardAdmin.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        cardAdmin.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                navigasi.show(panelUtama, "LOGIN_ADMIN");
+            }
+            @Override public void mouseEntered(MouseEvent e) {
+                cardAdmin.setBorder(new LineBorder(C_AKSEN, 2, true));
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                cardAdmin.setBorder(new LineBorder(C_BORDER, 1, true));
+            }
+        });
+
+        tombol.add(cardMhs);
+        tombol.add(Box.createVerticalStrut(14));
+        tombol.add(cardAdmin);
+        kartu.add(tombol, BorderLayout.CENTER);
+
+        bg.add(kartu);
+        return bg;
+    }
+
+    private JPanel buatKartuPilihan(String emoji, String judul, String sub) {
+        JPanel p = new JPanel(new BorderLayout(14, 0));
+        p.setBackground(C_INPUT);
+        p.setBorder(new LineBorder(C_BORDER, 1, true));
+        p.setMaximumSize(new Dimension(400, 72));
+        p.setPreferredSize(new Dimension(380, 72));
+        p.setOpaque(true);
+
+        JLabel ico = new JLabel(emoji);
+        ico.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 26));
+        ico.setBorder(new EmptyBorder(0, 16, 0, 0));
+
+        JPanel teks = new JPanel(new GridLayout(2, 1, 0, 2));
+        teks.setOpaque(false);
+        teks.setBorder(new EmptyBorder(12, 0, 12, 16));
+        JLabel lJudul = new JLabel(judul);
+        lJudul.setForeground(C_TEKS);
+        lJudul.setFont(new Font("Inter", Font.BOLD, 14));
+        JLabel lSub = new JLabel(sub);
+        lSub.setForeground(C_MUTED);
+        lSub.setFont(new Font("Inter", Font.PLAIN, 11));
+        teks.add(lJudul);
+        teks.add(lSub);
+
+        JLabel arrow = new JLabel("›");
+        arrow.setForeground(C_MUTED);
+        arrow.setFont(new Font("Inter", Font.BOLD, 22));
+        arrow.setBorder(new EmptyBorder(0, 0, 0, 16));
+
+        p.add(ico,   BorderLayout.WEST);
+        p.add(teks,  BorderLayout.CENTER);
+        p.add(arrow, BorderLayout.EAST);
+        return p;
+    }
+
+    // ═════════════════════════════════════════════
+    //  LAYAR: LOGIN MAHASISWA
+    // ═════════════════════════════════════════════
+    private JPanel buatLayarLoginMhs() {
+        JPanel bg = new JPanel(new GridBagLayout());
+        bg.setOpaque(false);
+
+        RoundedPanel kartu = new RoundedPanel(28, C_CARD);
+        kartu.setPreferredSize(new Dimension(440, 440));
+        kartu.setLayout(new BorderLayout());
+        kartu.setBorder(new EmptyBorder(42, 42, 42, 42));
+
+        JPanel top = buatHeaderForm("👤", "Login Mahasiswa", "Masukkan nama & NIM terdaftar");
+        kartu.add(top, BorderLayout.NORTH);
+
+        JPanel form = new JPanel();
+        form.setOpaque(false);
+        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+        form.setBorder(new EmptyBorder(28, 0, 0, 0));
+
+        form.add(buatLabelForm("NAMA LENGKAP"));
+        form.add(Box.createVerticalStrut(7));
+        JTextField txtNama = buatInput("Masukkan nama lengkap...");
+        tambahPlaceholder(txtNama, "Masukkan nama lengkap...");
+        form.add(txtNama);
+        form.add(Box.createVerticalStrut(18));
+
+        form.add(buatLabelForm("NIM"));
+        form.add(Box.createVerticalStrut(7));
+        JTextField txtNim = buatInput("Masukkan NIM...");
+        tambahPlaceholder(txtNim, "Masukkan NIM...");
+        form.add(txtNim);
+        form.add(Box.createVerticalStrut(28));
+
+        BrandButton btnLogin = new BrandButton("Masuk");
+        btnLogin.setMaximumSize(new Dimension(400, 46));
+        btnLogin.addActionListener(e -> {
+            String nama = txtNama.getText().trim();
+            String nim  = txtNim.getText().trim();
+            if (nama.isEmpty() || nama.equals("Masukkan nama lengkap...") ||
+                nim.isEmpty()  || nim.equals("Masukkan NIM...")) {
+                JOptionPane.showMessageDialog(this, "Isi nama & NIM terlebih dahulu!",
+                    "Peringatan", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            manusia user = peminjam.login(nama, nim);
+            if (user != null) {
+                penggunaAktif = user;
+                isAdmin = false;
+                masukDashboard();
+            } else {
+                JOptionPane.showMessageDialog(this, "Nama atau NIM tidak ditemukan!",
+                    "Login Gagal", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        form.add(btnLogin);
+        form.add(Box.createVerticalStrut(12));
+
+        JButton btnBack = buatTombolSecondary("← Kembali");
+        btnBack.addActionListener(e -> navigasi.show(panelUtama, "PILIH_LOGIN"));
+        form.add(btnBack);
+
+        kartu.add(form, BorderLayout.CENTER);
+        bg.add(kartu);
+        return bg;
+    }
+
+    // ═════════════════════════════════════════════
+    //  LAYAR: LOGIN ADMIN
+    // ═════════════════════════════════════════════
+    private JPanel buatLayarLoginAdmin() {
+        JPanel bg = new JPanel(new GridBagLayout());
+        bg.setOpaque(false);
+
+        RoundedPanel kartu = new RoundedPanel(28, C_CARD);
+        kartu.setPreferredSize(new Dimension(440, 440));
+        kartu.setLayout(new BorderLayout());
+        kartu.setBorder(new EmptyBorder(42, 42, 42, 42));
+
+        JPanel top = buatHeaderForm("🔐", "Login Admin", "Khusus pengelola perpustakaan");
+        kartu.add(top, BorderLayout.NORTH);
+
+        JPanel form = new JPanel();
+        form.setOpaque(false);
+        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+        form.setBorder(new EmptyBorder(28, 0, 0, 0));
+
+        form.add(buatLabelForm("USERNAME"));
+        form.add(Box.createVerticalStrut(7));
+        JTextField txtUser = buatInput("Masukkan username...");
+        tambahPlaceholder(txtUser, "Masukkan username...");
+        form.add(txtUser);
+        form.add(Box.createVerticalStrut(18));
+
+        form.add(buatLabelForm("PASSWORD"));
+        form.add(Box.createVerticalStrut(7));
+        JPasswordField txtPass = new JPasswordField("Masukkan password...");
+        txtPass.setMaximumSize(new Dimension(400, 45));
+        txtPass.setBackground(C_INPUT);
+        txtPass.setForeground(C_MUTED);
+        txtPass.setCaretColor(C_TEKS);
+        txtPass.setFont(new Font("Inter", Font.PLAIN, 14));
+        txtPass.setEchoChar((char) 0);
         txtPass.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(WARNA_BORDER), 
-            new EmptyBorder(0, 10, 0, 10)
-        ));
+            new LineBorder(C_BORDER, 1, true), new EmptyBorder(0, 14, 0, 14)));
+        tambahPlaceholderPassword(txtPass, "Masukkan password...");
+        form.add(txtPass);
+        form.add(Box.createVerticalStrut(28));
 
-        JButton btnLogin = new JButton("Login");
-        btnLogin.setBackground(WARNA_AKSEN);
-        btnLogin.setForeground(Color.WHITE);
-        btnLogin.setFocusPainted(false);
-        btnLogin.setMaximumSize(new Dimension(280, 40));
-        btnLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Info hint
+        JPanel hint = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        hint.setOpaque(false);
+        hint.setMaximumSize(new Dimension(400, 30));
+        JLabel lblHint = new JLabel("Contoh: username = Pali, password = palkel2");
+        lblHint.setForeground(C_MUTED);
+        lblHint.setFont(new Font("Inter", Font.ITALIC, 10));
+        hint.add(lblHint);
+        form.add(hint);
+        form.add(Box.createVerticalStrut(14));
 
-        btnLogin.addActionListener(e -> { 
-        String username = txtUser.getText();
-        String password = new String(txtPass.getPassword());
-
-        if (username.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(null, "Isi username & password!");
-        return;
-        }
-
-        if (adminSystem.ceklogin(username, password)) {
-        adminAktif = adminSystem.getadminAktif();
-
-        JOptionPane.showMessageDialog(null, 
-            "Login berhasil sebagai ADMIN: " + adminAktif.getusername());
-
-        
-        panelUtama.add(buatHalamanDashboard(), "HALAMAN_DASHBOARD");
-        navigasi.show(panelUtama, "HALAMAN_DASHBOARD");
-        panelUtama.revalidate();
-        panelUtama.repaint();
-        return;
-        }
-
-        penggunaAktif = peminjam.login(username, password);
-
-        if (penggunaAktif != null ) {
-        JOptionPane.showMessageDialog(null, 
-            "Login berhasil sebagai " + penggunaAktif.getnama() + "!");
-
-        panelUtama.add(buatHalamanDashboard(), "HALAMAN_DASHBOARD");
-        navigasi.show(panelUtama, "HALAMAN_DASHBOARD");
-        panelUtama.revalidate();
-        panelUtama.repaint();
-
-        } else {
-        JOptionPane.showMessageDialog(null, "Login gagal!");
-        }
+        BrandButton btnLogin = new BrandButton("Masuk sebagai Admin");
+        btnLogin.setMaximumSize(new Dimension(400, 46));
+        btnLogin.addActionListener(e -> {
+            String user = txtUser.getText().trim();
+            String pass = new String(txtPass.getPassword()).trim();
+            if (adminAuth.ceklogin(user, pass)) {
+                adminAktif = adminAuth.getadminAktif();
+                isAdmin    = true;
+                penggunaAktif = null;
+                masukDashboard();
+            } else {
+                JOptionPane.showMessageDialog(this, "Username atau password salah!",
+                    "Login Gagal", JOptionPane.ERROR_MESSAGE);
+            }
         });
+        form.add(btnLogin);
+        form.add(Box.createVerticalStrut(12));
 
-        kartuLogin.add(Box.createVerticalStrut(50));
-        kartuLogin.add(judul);
-        kartuLogin.add(Box.createVerticalStrut(40));
-        kartuLogin.add(txtUser);
-        kartuLogin.add(Box.createVerticalStrut(15));
-        kartuLogin.add(txtPass);
-        kartuLogin.add(Box.createVerticalStrut(30));
-        kartuLogin.add(btnLogin);
+        JButton btnBack = buatTombolSecondary("← Kembali");
+        btnBack.addActionListener(e -> navigasi.show(panelUtama, "PILIH_LOGIN"));
+        form.add(btnBack);
 
-        loginPanel.add(kartuLogin);
-        return loginPanel;
+        kartu.add(form, BorderLayout.CENTER);
+        bg.add(kartu);
+        return bg;
     }
 
-    private static JPanel buatHalamanDashboard() {
+    private void masukDashboard() {
+        // Hapus dashboard lama jika ada
+        for (int i = 0; i < panelUtama.getComponentCount(); i++) {
+            if ("DASHBOARD".equals(panelUtama.getComponent(i).getName())) {
+                panelUtama.remove(i); break;
+            }
+        }
+        JPanel db = buatDashboard();
+        db.setName("DASHBOARD");
+        panelUtama.add(db, "DASHBOARD");
+        navigasi.show(panelUtama, "DASHBOARD");
+        panelUtama.revalidate();
+        panelUtama.repaint();
+    }
+
+    // ═════════════════════════════════════════════
+    //  DASHBOARD UTAMA
+    // ═════════════════════════════════════════════
+    private JPanel buatDashboard() {
         JPanel dashboard = new JPanel(new BorderLayout());
-        dashboard.setBackground(WARNA_BG);
+        dashboard.setOpaque(false);
+        dashboard.add(buatSidebar(), BorderLayout.WEST);
 
-        String nama;
-        String nim;
+        dashboardLayout  = new CardLayout();
+        dashboardContent = new JPanel(dashboardLayout);
+        dashboardContent.setOpaque(false);
 
-        if (adminAktif != null) {
-        nama = adminAktif.getusername();
-        nim = "ADMIN";
-        } else if (penggunaAktif != null) {
-        nama = penggunaAktif.getnama();
-        nim = penggunaAktif.getnim();
-        } else {
-        nama = "Guest";
-        nim = "-";
+        dashboardContent.add(buatViewBuku(),    "BUKU");
+        dashboardContent.add(buatViewRiwayat(), "RIWAYAT");
+        if (isAdmin) {
+            dashboardContent.add(buatViewNotifAdmin(),   "NOTIFIKASI");
+            dashboardContent.add(buatViewKelolaAdmin(),  "KELOLA");
         }
 
-        JPanel sidebar = new JPanel();
-        sidebar.setBackground(WARNA_KARTU);
-        sidebar.setPreferredSize(new Dimension(280, 0));
-        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setBorder(new MatteBorder(0, 0, 0, 1, WARNA_BORDER));
+        JPanel mainArea = new JPanel(new BorderLayout());
+        mainArea.setOpaque(false);
+        mainArea.add(buatHeader(), BorderLayout.NORTH);
+        mainArea.add(dashboardContent, BorderLayout.CENTER);
 
-        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        logoPanel.setBackground(WARNA_KARTU);
-        logoPanel.setBorder(new EmptyBorder(30, 20, 30, 20));
-        logoPanel.setMaximumSize(new Dimension(280, 100));
-        
-        JLabel iconLogo = new JLabel("||||", SwingConstants.CENTER); 
-        iconLogo.setOpaque(true);
-        iconLogo.setBackground(WARNA_AKSEN);
-        iconLogo.setForeground(Color.WHITE);
-        iconLogo.setPreferredSize(new Dimension(40, 40));
-        iconLogo.setFont(new Font("Arial", Font.BOLD, 14));
-        
-        JLabel teksLogo = new JLabel(" Perpustakaan Digital");
-        teksLogo.setForeground(WARNA_TEKS);
-        teksLogo.setFont(new Font("Arial", Font.BOLD, 22));
-        
-        logoPanel.add(iconLogo);
-        logoPanel.add(teksLogo);
-
-        JLabel subMenu = new JLabel("MENU UTAMA");
-        subMenu.setForeground(WARNA_SUB_TEKS);
-        subMenu.setFont(new Font("Arial", Font.BOLD, 12));
-        subMenu.setBorder(new EmptyBorder(10, 25, 10, 25));
-
-        JPanel itemBuku = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        itemBuku.setBackground(new Color(239, 246, 255)); 
-        itemBuku.setMaximumSize(new Dimension(240, 45));
-        itemBuku.setBorder(new LineBorder(WARNA_AKSEN, 1, true));
-        
-        JLabel teksBuku = new JLabel(" Daftar Buku");
-        teksBuku.setForeground(WARNA_AKSEN);
-        teksBuku.setFont(new Font("Arial", Font.BOLD, 15));
-        itemBuku.add(teksBuku);
-
-// 🔥 GANTI SELURUH BAGIAN INI
-JPanel itemNotif = new JPanel(new BorderLayout());
-itemNotif.setBackground(WARNA_KARTU);
-itemNotif.setMaximumSize(new Dimension(240, 45));
-itemNotif.setMinimumSize(new Dimension(240, 45)); // TAMBAHAN INI
-itemNotif.setPreferredSize(new Dimension(240, 45)); // TAMBAHAN INI
-itemNotif.setBorder(new EmptyBorder(5, 10, 5, 10));
-itemNotif.setCursor(new Cursor(Cursor.HAND_CURSOR)); // TAMBAHAN INI
-
-JLabel teksNotif = new JLabel(" Notifikasi");
-teksNotif.setForeground(WARNA_SUB_TEKS);
-teksNotif.setFont(new Font("Arial", Font.PLAIN, 15));
-
-JLabel badge = new JLabel("2", SwingConstants.CENTER);
-badge.setForeground(Color.WHITE);
-badge.setBackground(WARNA_AKSEN);
-badge.setOpaque(true);
-badge.setPreferredSize(new Dimension(20, 20));
-badge.setFont(new Font("Arial", Font.BOLD, 11));
-
-itemNotif.add(teksNotif, BorderLayout.WEST);
-itemNotif.add(badge, BorderLayout.EAST);
-
-// 🔥 EVENT LISTENER - HARUS SETELAH ADD COMPONENT
-itemNotif.addMouseListener(new java.awt.event.MouseAdapter() {
-    @Override
-    public void mouseEntered(java.awt.event.MouseEvent e) {
-        itemNotif.setBackground(new Color(239, 246, 255)); // Biru muda
-    }
-    
-    @Override
-    public void mouseExited(java.awt.event.MouseEvent e) {
-        itemNotif.setBackground(WARNA_KARTU);
-    }
-    
-    @Override
-    public void mouseClicked(java.awt.event.MouseEvent e) {
-    }
-});
-
-        JPanel profilBawah = new JPanel(new BorderLayout());
-        profilBawah.setBackground(WARNA_KARTU);
-        profilBawah.setBorder(new EmptyBorder(15, 20, 15, 20));
-        profilBawah.setMaximumSize(new Dimension(280, 80));
-        
-        JLabel lingkaranMB = new JLabel("MB", SwingConstants.CENTER);
-        lingkaranMB.setOpaque(true);
-        lingkaranMB.setBackground(WARNA_AKSEN);
-        lingkaranMB.setForeground(Color.WHITE);
-        lingkaranMB.setPreferredSize(new Dimension(45, 45));
-        lingkaranMB.setFont(new Font("Arial", Font.BOLD, 14));
-        
-        JPanel teksProfil = new JPanel(new GridLayout(2, 1));
-        teksProfil.setBackground(WARNA_KARTU);
-        teksProfil.setBorder(new EmptyBorder(0, 12, 0, 0));
-        
-        JLabel namaUser = new JLabel(nama);
-        namaUser.setForeground(WARNA_TEKS);
-        namaUser.setFont(new Font("Arial", Font.BOLD, 13));
-        
-        JLabel nimUser = new JLabel(nim);
-        nimUser.setForeground(WARNA_SUB_TEKS);
-        nimUser.setFont(new Font("Arial", Font.PLAIN, 11));
-        
-        teksProfil.add(namaUser);
-        teksProfil.add(nimUser);
-        
-        JLabel iconLogout = new JLabel("->"); 
-        iconLogout.setForeground(WARNA_SUB_TEKS);
-        iconLogout.setFont(new Font("Arial", Font.BOLD, 16));
-
-        profilBawah.add(lingkaranMB, BorderLayout.WEST);
-        profilBawah.add(teksProfil, BorderLayout.CENTER);
-        profilBawah.add(iconLogout, BorderLayout.EAST);
-
-        sidebar.add(logoPanel);
-        sidebar.add(subMenu);
-        sidebar.add(itemBuku);
-        sidebar.add(Box.createVerticalStrut(10));
-        sidebar.add(itemNotif);
-        sidebar.add(Box.createVerticalGlue()); 
-        sidebar.add(new JSeparator(JSeparator.HORIZONTAL)); 
-        sidebar.add(profilBawah);
-
-        JPanel konten = new JPanel(new BorderLayout());
-        konten.setBackground(WARNA_BG);
-
-        JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(WARNA_BG);
-        header.setBorder(new EmptyBorder(20, 30, 20, 30));
-
-        JLabel sapaan = new JLabel("helo " + penggunaAktif.getnama() + "!");
-        sapaan.setFont(new Font("Arial", Font.BOLD, 22));
-        sapaan.setForeground(WARNA_TEKS);
-
-        JButton btnLogout = new JButton("Logout");
-        btnLogout.addActionListener(e -> {
-        penggunaAktif = null;
-        adminAktif = null;
-        navigasi.show(panelUtama, "HALAMAN_LOGIN");
-        });
-
-        header.add(sapaan, BorderLayout.WEST);
-        header.add(btnLogout, BorderLayout.EAST);
-
-        JPanel gridBuku = new JPanel(new GridLayout(0, 3, 20, 20));
-        gridBuku.setBackground(WARNA_BG);
-        gridBuku.setBorder(new EmptyBorder(0, 30, 30, 30));
-
-        for (Buku.Daftarbuku buku : Buku.Utama.getDaftarBuku()) {
-            boolean tersedia = Buku.Utama.isTersedia(buku.getJudul());
-            gridBuku.add(buatKartuBuku(buku, tersedia));
-}
-
-        JScrollPane scroll = new JScrollPane(gridBuku);
-        scroll.setBorder(null);
-        scroll.getViewport().setBackground(WARNA_BG);
-
-        konten.add(header, BorderLayout.NORTH);
-        konten.add(scroll, BorderLayout.CENTER);
-
-        dashboard.add(sidebar, BorderLayout.WEST);
-        dashboard.add(konten, BorderLayout.CENTER);
-
+        dashboard.add(mainArea, BorderLayout.CENTER);
         return dashboard;
     }
 
-    private static JPanel buatKartuBuku(Buku.Daftarbuku buku, boolean tersedia) {
-    JPanel kartu = new JPanel(new BorderLayout());
-    kartu.setBackground(WARNA_KARTU);
-    kartu.setBorder(new LineBorder(WARNA_BORDER, 1));
-    kartu.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    // ─────────────────────────────────────────────
+    //  SIDEBAR
+    // ─────────────────────────────────────────────
+    private JPanel buatSidebar() {
+        JPanel sidebar = new JPanel(new BorderLayout());
+        sidebar.setBackground(C_CARD);
+        sidebar.setPreferredSize(new Dimension(250, 0));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, C_BORDER));
 
-    JPanel areaGambar = new JPanel(new BorderLayout());
-    areaGambar.setPreferredSize(new Dimension(0, 160));
-    areaGambar.setBackground(new Color(229, 231, 235));
+        // Logo
+        JPanel logoArea = new JPanel(new FlowLayout(FlowLayout.LEFT, 22, 28));
+        logoArea.setOpaque(false);
+        JLabel ikoLogo = new JLabel("📚");
+        ikoLogo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 22));
+        JLabel teksLogo = new JLabel("Perpustakaan");
+        teksLogo.setForeground(C_TEKS);
+        teksLogo.setFont(new Font("Inter", Font.BOLD, 17));
+        logoArea.add(ikoLogo);
+        logoArea.add(teksLogo);
+        sidebar.add(logoArea, BorderLayout.NORTH);
 
-    String path = buku.getImagePath();
-    java.io.File file = new java.io.File(path);
+        // Menu
+        JPanel menu = new JPanel();
+        menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
+        menu.setOpaque(false);
+        menu.setBorder(new EmptyBorder(0, 14, 14, 14));
 
-    if (file.exists()) {
-        try {
-            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(file);
-            Image scaled = img.getScaledInstance(180, 160, Image.SCALE_SMOOTH);
-            JLabel lblGambar = new JLabel(new ImageIcon(scaled));
-            lblGambar.setHorizontalAlignment(SwingConstants.CENTER);
-            areaGambar.add(lblGambar, BorderLayout.CENTER);
-        } catch (Exception ex) {
-            areaGambar.add(labelFallback(buku.getGenre()), BorderLayout.CENTER);
+        JLabel lblMenu = new JLabel("MENU UTAMA");
+        lblMenu.setForeground(C_MUTED);
+        lblMenu.setFont(new Font("Inter", Font.BOLD, 9));
+        lblMenu.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblMenu.setBorder(new EmptyBorder(0, 6, 10, 0));
+        menu.add(lblMenu);
+
+        menu.add(buatNavBtn("📖", "Daftar Buku",  "BUKU",        true));
+        menu.add(Box.createVerticalStrut(4));
+        menu.add(buatNavBtn("📋", "Riwayat",       "RIWAYAT",     false));
+
+        if (isAdmin) {
+            menu.add(Box.createVerticalStrut(4));
+            menu.add(buatNavBtn("🔔", "Log Notifikasi", "NOTIFIKASI", false));
+            menu.add(Box.createVerticalStrut(4));
+            menu.add(buatNavBtn("⚙️", "Kelola Buku",    "KELOLA",     false));
         }
-    } else {
-        // Jika file tidak ditemukan, tampilkan placeholder
-        areaGambar.add(labelFallback(buku.getGenre()), BorderLayout.CENTER);
+        sidebar.add(menu, BorderLayout.CENTER);
+
+        // Profil bawah
+        String nama, sub;
+        if (isAdmin) {
+            nama = adminAktif.getusername();
+            sub  = "Administrator";
+        } else {
+            nama = penggunaAktif.getnama();
+            sub  = "NIM: " + penggunaAktif.getnim();
+        }
+
+        RoundedPanel profil = new RoundedPanel(14, C_HILITE);
+        profil.setPreferredSize(new Dimension(220, 68));
+        profil.setLayout(new BorderLayout(10, 0));
+        profil.setBorder(new EmptyBorder(12, 14, 12, 14));
+
+        JLabel ikoUser = new JLabel(isAdmin ? "🔐" : "👤");
+        ikoUser.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+
+        JPanel teksArea = new JPanel(new GridLayout(2, 1, 0, 2));
+        teksArea.setOpaque(false);
+        JLabel namaLbl = new JLabel(nama.length() > 18 ? nama.substring(0, 18) + "…" : nama);
+        namaLbl.setForeground(C_TEKS);
+        namaLbl.setFont(new Font("Inter", Font.BOLD, 12));
+        JLabel subLbl = new JLabel(sub);
+        subLbl.setForeground(C_MUTED);
+        subLbl.setFont(new Font("Inter", Font.PLAIN, 10));
+        teksArea.add(namaLbl);
+        teksArea.add(subLbl);
+
+        profil.add(ikoUser,  BorderLayout.WEST);
+        profil.add(teksArea, BorderLayout.CENTER);
+
+        JPanel btm = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 14));
+        btm.setOpaque(false);
+        btm.setBorder(new MatteBorder(1, 0, 0, 0, C_BORDER));
+        btm.add(profil);
+        sidebar.add(btm, BorderLayout.SOUTH);
+
+        return sidebar;
     }
 
-    JPanel info = new JPanel(new GridLayout(4, 1));
-    info.setBackground(WARNA_KARTU);
-    info.setBorder(new EmptyBorder(10, 10, 10, 10));
+    private JButton buatNavBtn(String iko, String teks, String cardId, boolean aktif) {
+        JButton btn = new JButton(iko + "  " + teks);
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btn.setMaximumSize(new Dimension(222, 42));
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("Inter", Font.BOLD, 12));
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-    JLabel lJudul = new JLabel(buku.getJudul());
-    lJudul.setForeground(WARNA_TEKS);
-    lJudul.setFont(new Font("Arial", Font.BOLD, 13));
-
-    JLabel lPenulis = new JLabel(buku.getPenulis());
-    lPenulis.setForeground(WARNA_SUB_TEKS);
-    lPenulis.setFont(new Font("Arial", Font.PLAIN, 11));
-
-    JLabel lStatus = new JLabel(tersedia ? "● Tersedia" : "● Kosong");
-    lStatus.setForeground(tersedia ? new Color(22, 163, 74) : new Color(220, 38, 38));
-    lStatus.setFont(new Font("Arial", Font.BOLD, 11));
-
-    JButton btnPinjam = new JButton(tersedia ? "Pinjam" : "Tidak Tersedia");
-    btnPinjam.setBackground(tersedia ? WARNA_AKSEN : WARNA_SUB_TEKS);
-    btnPinjam.setForeground(Color.WHITE);
-    btnPinjam.setFocusPainted(false);
-    btnPinjam.setEnabled(tersedia);
-
-    info.add(lJudul);
-    info.add(lPenulis);
-    info.add(lStatus);
-    info.add(btnPinjam);
-
-    kartu.add(areaGambar, BorderLayout.NORTH);
-    kartu.add(info, BorderLayout.CENTER);
-
-    kartu.addMouseListener(new java.awt.event.MouseAdapter() {
-        @Override
-        public void mouseClicked(java.awt.event.MouseEvent e) {
-            tampilkanPopupBuku(buku, tersedia);
+        if (aktif) {
+            btn.setBackground(C_HILITE);
+            btn.setForeground(C_AKSEN);
+            btn.setOpaque(true);
+            btn.setBorder(new LineBorder(C_AKSEN, 1, true));
+        } else {
+            btn.setContentAreaFilled(false);
+            btn.setForeground(C_MUTED);
+            btn.setBorder(new EmptyBorder(0, 8, 0, 8));
         }
-        @Override
-        public void mouseEntered(java.awt.event.MouseEvent e) {
-            kartu.setBorder(new LineBorder(WARNA_AKSEN, 2));
-        }
-        @Override
-        public void mouseExited(java.awt.event.MouseEvent e) {
-            kartu.setBorder(new LineBorder(WARNA_BORDER, 1));
-        }
-    });
 
-    return kartu;
-}
-
-private static JLabel labelFallback(String genre) {
-    JLabel lbl = new JLabel("<html><center><br>" + genre + "</center></html>",
-                             SwingConstants.CENTER);
-    lbl.setForeground(WARNA_SUB_TEKS);
-    lbl.setFont(new Font("Arial", Font.PLAIN, 13));
-    return lbl;
-}
-
-private static void tampilkanPopupBuku(Buku.Daftarbuku buku, boolean tersedia) {
-    JDialog popup = new JDialog(frame, buku.getJudul(), true);
-    popup.setSize(480, 520);
-    popup.setLocationRelativeTo(frame);
-    popup.setLayout(new BorderLayout());
-
-    JPanel isiPopup = new JPanel(new BorderLayout(0, 15));
-    isiPopup.setBackground(WARNA_KARTU);
-    isiPopup.setBorder(new EmptyBorder(25, 25, 25, 25));
-
-    JPanel coverPopup = new JPanel(new BorderLayout());
-    coverPopup.setBackground(new Color(229, 231, 235));
-    coverPopup.setPreferredSize(new Dimension(0, 200));
-
-    String path = buku.getImagePath();
-    java.io.File file = new java.io.File(path);
-    if (file.exists()) {
-        try {
-            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(file);
-            Image scaled = img.getScaledInstance(140, 200, Image.SCALE_SMOOTH);
-            JLabel lblCover = new JLabel(new ImageIcon(scaled));
-            lblCover.setHorizontalAlignment(SwingConstants.CENTER);
-            coverPopup.add(lblCover, BorderLayout.CENTER);
-        } catch (Exception ex) {
-            coverPopup.add(labelFallback(buku.getGenre()), BorderLayout.CENTER);
-        }
-    } else {
-        coverPopup.add(labelFallback(buku.getGenre()), BorderLayout.CENTER);
+        btn.addActionListener(e -> dashboardLayout.show(dashboardContent, cardId));
+        return btn;
     }
 
-    JPanel detailPanel = new JPanel(new GridLayout(5, 1, 0, 5));
-    detailPanel.setBackground(WARNA_KARTU);
+    // ─────────────────────────────────────────────
+    //  HEADER
+    // ─────────────────────────────────────────────
+    private JPanel buatHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(C_CARD);
+        header.setPreferredSize(new Dimension(0, 72));
+        header.setBorder(new CompoundBorder(
+            new MatteBorder(0, 0, 1, 0, C_BORDER),
+            new EmptyBorder(0, 28, 0, 36)));
 
-    detailPanel.add(buatLabelDetail("Judul    : ", buku.getJudul()));
-    detailPanel.add(buatLabelDetail("Penulis  : ", buku.getPenulis()));
-    detailPanel.add(buatLabelDetail("Genre    : ", buku.getGenre()));
-    detailPanel.add(buatLabelDetail("Penerbit : ", buku.getPenerbit() + " (" + buku.getTahunterbit() + ")"));
-    detailPanel.add(buatLabelDetail("Stok     : ", buku.getJumlah() + " buku"));
+        String nama = isAdmin ? adminAktif.getusername() : penggunaAktif.getnama();
+        JLabel sapaan = new JLabel("Halo, " + nama + " 👋");
+        sapaan.setForeground(C_TEKS);
+        sapaan.setFont(new Font("Inter", Font.BOLD, 20));
 
-    JTextArea txtDeskripsi = new JTextArea(buku.getDeskripsi());
-    txtDeskripsi.setWrapStyleWord(true);
-    txtDeskripsi.setLineWrap(true);
-    txtDeskripsi.setEditable(false);
-    txtDeskripsi.setBackground(new Color(249, 250, 251));
-    txtDeskripsi.setForeground(WARNA_TEKS);
-    txtDeskripsi.setFont(new Font("Arial", Font.PLAIN, 13));
-    txtDeskripsi.setBorder(new EmptyBorder(10, 10, 10, 10));
+        JButton btnLogout = new JButton("Ganti Akun  →");
+        btnLogout.setForeground(C_MUTED);
+        btnLogout.setContentAreaFilled(false);
+        btnLogout.setBorder(null);
+        btnLogout.setFont(new Font("Inter", Font.BOLD, 12));
+        btnLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnLogout.addActionListener(e -> {
+            penggunaAktif = null; adminAktif = null; isAdmin = false;
+            navigasi.show(panelUtama, "PILIH_LOGIN");
+        });
 
-    JScrollPane scrollDesk = new JScrollPane(txtDeskripsi);
-    scrollDesk.setBorder(new LineBorder(WARNA_BORDER));
-    scrollDesk.setPreferredSize(new Dimension(0, 100));
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        left.setOpaque(false);
+        left.add(sapaan);
 
-    JButton btnTutup = new JButton("Tutup");
-    btnTutup.setBackground(WARNA_SUB_TEKS);
-    btnTutup.setForeground(Color.WHITE);
-    btnTutup.setFocusPainted(false);
-    btnTutup.addActionListener(e -> popup.dispose());
+        header.add(left,       BorderLayout.WEST);
+        header.add(btnLogout,  BorderLayout.EAST);
+        return header;
+    }
 
-    JButton btnPinjamPopup = new JButton(tersedia ? "Pinjam Buku Ini" : "Tidak Tersedia");
-    btnPinjamPopup.setBackground(tersedia ? WARNA_AKSEN : new Color(220, 38, 38));
-    btnPinjamPopup.setForeground(Color.WHITE);
-    btnPinjamPopup.setFocusPainted(false);
-    btnPinjamPopup.setEnabled(tersedia);
+    // ═════════════════════════════════════════════
+    //  VIEW: DAFTAR BUKU
+    // ═════════════════════════════════════════════
+    private JPanel buatViewBuku() {
+        JPanel view = new JPanel(new BorderLayout());
+        view.setOpaque(false);
 
-    JPanel tombolPanel = new JPanel(new GridLayout(1, 2, 10, 0));
-    tombolPanel.setBackground(WARNA_KARTU);
-    tombolPanel.add(btnTutup);
-    tombolPanel.add(btnPinjamPopup);
+        // Filter genre
+        JPanel filterBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        filterBar.setBackground(C_CARD);
+        filterBar.setBorder(new CompoundBorder(
+            new MatteBorder(0, 0, 1, 0, C_BORDER),
+            new EmptyBorder(12, 24, 12, 24)));
 
-    isiPopup.add(coverPopup, BorderLayout.NORTH);
-    isiPopup.add(detailPanel, BorderLayout.CENTER);
+        JLabel lblFilter = new JLabel("Genre:");
+        lblFilter.setForeground(C_MUTED);
+        lblFilter.setFont(new Font("Inter", Font.BOLD, 11));
+        filterBar.add(lblFilter);
 
-    JPanel bawahPopup = new JPanel(new BorderLayout(0, 10));
-    bawahPopup.setBackground(WARNA_KARTU);
-    bawahPopup.add(scrollDesk, BorderLayout.CENTER);
-    bawahPopup.add(tombolPanel, BorderLayout.SOUTH);
+        String[] genres = {"Semua", "Sastra Perjalanan", "Novel", "Sejarah", "Pengembangan Diri", "Motivasi"};
+        for (String g : genres) {
+            JButton btnG = buatChip(g, selectedGenre.equals(g));
+            btnG.addActionListener(e -> {
+                selectedGenre = g;
+                for (Component c : filterBar.getComponents())
+                    if (c instanceof JButton) {
+                        JButton b = (JButton) c;
+                        boolean aktif = b.getText().equals(g);
+                        b.setBackground(aktif ? C_AKSEN : C_INPUT);
+                        b.setForeground(aktif ? Color.WHITE : C_MUTED);
+                    }
+                refreshGridBuku();
+            });
+            filterBar.add(btnG);
+        }
+        view.add(filterBar, BorderLayout.NORTH);
 
-    isiPopup.add(bawahPopup, BorderLayout.SOUTH);
+        // Grid
+        JPanel grid = new JPanel(new WrapLayout(FlowLayout.LEFT, 20, 20));
+        grid.setOpaque(false);
+        grid.setName("GRID_BUKU");
+        grid.setBorder(new EmptyBorder(20, 20, 20, 20));
+        isiGridBuku(grid);
 
-    popup.add(isiPopup);
-    popup.setVisible(true);
-}
+        JScrollPane scroll = new JScrollPane(grid);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        view.add(scroll, BorderLayout.CENTER);
+        return view;
+    }
 
-    private static JLabel buatLabelDetail(String label, String nilai) {
-        JLabel lbl = new JLabel("<html><b>" + label + "</b>" + nilai + "</html>");
-        lbl.setForeground(WARNA_TEKS);
-        lbl.setFont(new Font("Arial", Font.PLAIN, 13));
-        return lbl;
-}
+    private JButton buatChip(String teks, boolean aktif) {
+        JButton btn = new JButton(teks);
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("Inter", Font.BOLD, 11));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBackground(aktif ? C_AKSEN : C_INPUT);
+        btn.setForeground(aktif ? Color.WHITE : C_MUTED);
+        btn.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(aktif ? C_AKSEN : C_BORDER, 1, true),
+            new EmptyBorder(4, 12, 4, 12)));
+        return btn;
+    }
+
+    private void isiGridBuku(JPanel panel) {
+        panel.removeAll();
+        List<Daftarbuku> filtered = Utama.getDaftarBuku().stream()
+            .filter(b -> selectedGenre.equals("Semua") || b.getGenre().equals(selectedGenre))
+            .collect(Collectors.toList());
+        for (Daftarbuku b : filtered)
+            panel.add(new KartuBuku(b));
+        panel.revalidate();
+        panel.repaint();
+    }
+
+    private void refreshGridBuku() {
+        JPanel grid = cariByName(dashboardContent, "GRID_BUKU");
+        if (grid != null) isiGridBuku(grid);
+    }
+
+    // ═════════════════════════════════════════════
+    //  VIEW: RIWAYAT
+    // ═════════════════════════════════════════════
+    private JPanel buatViewRiwayat() {
+        JPanel view = new JPanel(new BorderLayout());
+        view.setOpaque(false);
+        view.setBorder(new EmptyBorder(28, 36, 36, 36));
+        view.setName("RIWAYAT_VIEW");
+
+        JLabel title = new JLabel("Riwayat Peminjaman");
+        title.setForeground(C_TEKS);
+        title.setFont(new Font("Inter", Font.BOLD, 20));
+        view.add(title, BorderLayout.NORTH);
+
+        JPanel list = new JPanel();
+        list.setOpaque(false);
+        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
+        list.setBorder(new EmptyBorder(18, 0, 0, 0));
+        isiRiwayat(list);
+
+        JScrollPane scroll = new JScrollPane(list);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        view.add(scroll, BorderLayout.CENTER);
+        return view;
+    }
+
+    private void isiRiwayat(JPanel panel) {
+        panel.removeAll();
+        String nama = isAdmin ? "" : penggunaAktif.getnama();
+        String nim  = isAdmin ? "" : penggunaAktif.getnim();
+
+        List<PinjamRecord> history = riwayatList.stream()
+            .filter(r -> isAdmin || (r.nama.equals(nama) && r.nim.equals(nim)))
+            .collect(Collectors.toList());
+
+        if (history.isEmpty()) {
+            JPanel emptyState = new JPanel(new GridBagLayout());
+            emptyState.setOpaque(false);
+            emptyState.setPreferredSize(new Dimension(0, 200));
+            JLabel lbl = new JLabel("Belum ada riwayat peminjaman  📭");
+            lbl.setForeground(C_MUTED);
+            lbl.setFont(new Font("Inter", Font.PLAIN, 15));
+            emptyState.add(lbl);
+            panel.add(emptyState);
+        } else {
+            for (PinjamRecord r : history) {
+                RoundedPanel item = new RoundedPanel(12, C_CARD);
+                item.setLayout(new BorderLayout(12, 0));
+                item.setMaximumSize(new Dimension(1000, 76));
+                item.setBorder(new EmptyBorder(14, 20, 14, 16));
+
+                // Status strip kiri
+                JPanel strip = new JPanel();
+                strip.setPreferredSize(new Dimension(4, 0));
+                strip.setBackground(r.dipinjam ? C_AKSEN : C_SUCCESS);
+                item.add(strip, BorderLayout.WEST);
+
+                JLabel bNama = new JLabel(r.buku.getJudul() + "  ·  " + r.buku.getPenulis());
+                bNama.setForeground(C_TEKS);
+                bNama.setFont(new Font("Inter", Font.BOLD, 13));
+
+                JLabel statusLbl = new JLabel(r.dipinjam ? "SEDANG DIPINJAM" : "SUDAH DIKEMBALIKAN");
+                statusLbl.setForeground(r.dipinjam ? C_AKSEN : C_SUCCESS);
+                statusLbl.setFont(new Font("Inter", Font.BOLD, 10));
+
+                JPanel kiri = new JPanel(new GridLayout(2, 1, 0, 4));
+                kiri.setOpaque(false);
+                kiri.add(bNama);
+                kiri.add(statusLbl);
+                item.add(kiri, BorderLayout.CENTER);
+
+                if (r.dipinjam) {
+                    BrandButton retBtn = new BrandButton("Kembalikan");
+                    retBtn.setPreferredSize(new Dimension(110, 34));
+                    retBtn.addActionListener(e -> {
+                        r.dipinjam = false;
+                        refreshViewRiwayat();
+                        refreshNotifPanel();
+                    });
+                    item.add(retBtn, BorderLayout.EAST);
+                }
+
+                panel.add(item);
+                panel.add(Box.createVerticalStrut(8));
+            }
+        }
+        panel.revalidate();
+        panel.repaint();
+    }
+
+    private void refreshViewRiwayat() {
+        JPanel view = cariByName(dashboardContent, "RIWAYAT_VIEW");
+        if (view != null) {
+            JScrollPane sc = (JScrollPane) view.getComponent(1);
+            isiRiwayat((JPanel) sc.getViewport().getView());
+        }
+    }
+
+    // ═════════════════════════════════════════════
+    //  VIEW: NOTIFIKASI ADMIN
+    // ═════════════════════════════════════════════
+    private JPanel buatViewNotifAdmin() {
+        JPanel view = new JPanel(new BorderLayout());
+        view.setOpaque(false);
+        view.setBorder(new EmptyBorder(28, 36, 36, 36));
+        view.setName("NOTIF_VIEW");
+
+        JLabel title = new JLabel("Log Aktivitas Peminjaman");
+        title.setForeground(C_TEKS);
+        title.setFont(new Font("Inter", Font.BOLD, 20));
+        view.add(title, BorderLayout.NORTH);
+
+        JPanel list = new JPanel();
+        list.setOpaque(false);
+        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
+        list.setName("NOTIF_LIST");
+        list.setBorder(new EmptyBorder(18, 0, 0, 0));
+        refreshNotifAdmin(list);
+
+        JScrollPane scroll = new JScrollPane(list);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        view.add(scroll, BorderLayout.CENTER);
+        return view;
+    }
+
+    private void refreshNotifAdmin(JPanel panel) {
+        panel.removeAll();
+        if (riwayatList.isEmpty()) {
+            JLabel empty = new JLabel("Belum ada aktivitas  📭");
+            empty.setForeground(C_MUTED);
+            empty.setFont(new Font("Inter", Font.PLAIN, 14));
+            panel.add(empty);
+        }
+        for (PinjamRecord r : riwayatList) {
+            RoundedPanel card = new RoundedPanel(10, C_CARD);
+            card.setLayout(new BorderLayout(10, 0));
+            card.setMaximumSize(new Dimension(1000, 62));
+            card.setBorder(new EmptyBorder(10, 16, 10, 16));
+
+            JPanel dot = new JPanel();
+            dot.setPreferredSize(new Dimension(4, 0));
+            dot.setBackground(r.dipinjam ? C_AKSEN : C_SUCCESS);
+            card.add(dot, BorderLayout.WEST);
+
+            String msg = "<html><b>" + r.nama + "</b> <span style='color:#6b7280'>(" + r.nim + ")</span> "
+                + (r.dipinjam ? "meminjam" : "mengembalikan")
+                + " &nbsp;<b>" + r.buku.getJudul() + "</b></html>";
+            JLabel lbl = new JLabel(msg);
+            lbl.setForeground(C_TEKS);
+            lbl.setFont(new Font("Inter", Font.PLAIN, 13));
+            card.add(lbl, BorderLayout.CENTER);
+
+            panel.add(card);
+            panel.add(Box.createVerticalStrut(6));
+        }
+        panel.revalidate();
+        panel.repaint();
+    }
+
+    private void refreshNotifPanel() {
+        JPanel list = cariByName(dashboardContent, "NOTIF_LIST");
+        if (list != null) refreshNotifAdmin(list);
+    }
+
+    // ═════════════════════════════════════════════
+    //  VIEW: KELOLA BUKU (ADMIN)
+    // ═════════════════════════════════════════════
+    private JPanel buatViewKelolaAdmin() {
+        JPanel view = new JPanel(new BorderLayout(0, 0));
+        view.setOpaque(false);
+        view.setBorder(new EmptyBorder(28, 36, 36, 36));
+        view.setName("KELOLA_VIEW");
+
+        // Header kelola
+        JPanel top = new JPanel(new BorderLayout());
+        top.setOpaque(false);
+        top.setBorder(new EmptyBorder(0, 0, 20, 0));
+
+        JLabel title = new JLabel("Manajemen Koleksi Buku");
+        title.setForeground(C_TEKS);
+        title.setFont(new Font("Inter", Font.BOLD, 20));
+        top.add(title, BorderLayout.WEST);
+
+        BrandButton btnTambah = new BrandButton("＋  Tambah Buku");
+        btnTambah.setPreferredSize(new Dimension(150, 38));
+        btnTambah.addActionListener(e -> tampilDialogTambahBuku());
+        top.add(btnTambah, BorderLayout.EAST);
+        view.add(top, BorderLayout.NORTH);
+
+        // Tabel
+        String[] cols = {"Judul", "Penulis", "Genre", "Penerbit", "Tahun", "Stok", "Status"};
+        DefaultTableModel model = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+
+        isiTabelBuku(model);
+
+        JTable table = new JTable(model);
+        table.setBackground(C_CARD);
+        table.setForeground(C_TEKS);
+        table.setGridColor(C_BORDER);
+        table.setRowHeight(44);
+        table.setSelectionBackground(C_HILITE);
+        table.setShowVerticalLines(false);
+        table.setFont(new Font("Inter", Font.PLAIN, 13));
+        table.getTableHeader().setBackground(C_INPUT);
+        table.getTableHeader().setForeground(C_TEKS);
+        table.getTableHeader().setFont(new Font("Inter", Font.BOLD, 12));
+        table.getTableHeader().setBorder(new MatteBorder(0, 0, 1, 0, C_BORDER));
+
+        // Render status kolom dengan warna
+        table.getColumnModel().getColumn(6).setCellRenderer((tbl, value, sel, foc, row, col) -> {
+            JLabel lbl = new JLabel(value != null ? value.toString() : "");
+            lbl.setOpaque(true);
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
+            lbl.setFont(new Font("Inter", Font.BOLD, 11));
+            boolean tersedia = "Tersedia".equals(value);
+            lbl.setForeground(tersedia ? C_SUCCESS : C_DANGER);
+            lbl.setBackground(sel ? C_HILITE : C_CARD);
+            return lbl;
+        });
+
+        table.setName("TABEL_BUKU");
+
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(new LineBorder(C_BORDER));
+        scroll.getViewport().setBackground(C_CARD);
+        view.add(scroll, BorderLayout.CENTER);
+
+        // Panel aksi di bawah tabel
+        JPanel aksiPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 12));
+        aksiPanel.setOpaque(false);
+
+        BrandButton btnEdit = new BrandButton("✏️  Edit Ketersediaan");
+        btnEdit.setPreferredSize(new Dimension(185, 38));
+        btnEdit.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Pilih buku dari tabel terlebih dahulu!",
+                    "Peringatan", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            String judul = model.getValueAt(row, 0).toString();
+            tampilDialogEditBuku(judul, model, row);
+        });
+
+        JButton btnHapus = buatTombolSecondary("🗑️  Hapus Buku");
+        btnHapus.setPreferredSize(new Dimension(140, 38));
+        btnHapus.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Pilih buku terlebih dahulu!", "Peringatan", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            String judul = model.getValueAt(row, 0).toString();
+            int konfirm = JOptionPane.showConfirmDialog(this,
+                "Hapus buku \"" + judul + "\" dari daftar?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+            if (konfirm == JOptionPane.YES_OPTION) {
+                Utama.getDaftarBuku().removeIf(b -> b.getJudul().equals(judul));
+                ketersediaan.remove(judul);
+                isiTabelBuku(model);
+                refreshGridBuku();
+            }
+        });
+
+        aksiPanel.add(btnEdit);
+        aksiPanel.add(btnHapus);
+        view.add(aksiPanel, BorderLayout.SOUTH);
+
+        return view;
+    }
+
+    private void isiTabelBuku(DefaultTableModel model) {
+        model.setRowCount(0);
+        for (Daftarbuku b : Utama.getDaftarBuku()) {
+            boolean ada = ketersediaan.getOrDefault(b.getJudul(), true);
+            model.addRow(new Object[]{
+                b.getJudul(), b.getPenulis(), b.getGenre(),
+                b.getPenerbit(), b.getTahunterbit(), b.getJumlah(),
+                ada ? "Tersedia" : "Kosong"
+            });
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    //  DIALOG: TAMBAH BUKU
+    // ─────────────────────────────────────────────
+    private void tampilDialogTambahBuku() {
+        JDialog d = new JDialog(this, "Tambah Buku Baru", true);
+        d.setSize(460, 480);
+        d.setLocationRelativeTo(this);
+        d.getContentPane().setBackground(C_CARD);
+        d.setLayout(new BorderLayout());
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(C_AKSEN);
+        header.setBorder(new EmptyBorder(18, 24, 18, 24));
+        JLabel judul = new JLabel("＋  Tambah Buku Baru");
+        judul.setForeground(Color.WHITE);
+        judul.setFont(new Font("Inter", Font.BOLD, 16));
+        header.add(judul);
+        d.add(header, BorderLayout.NORTH);
+
+        JPanel form = new JPanel();
+        form.setOpaque(false);
+        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+        form.setBorder(new EmptyBorder(24, 28, 20, 28));
+
+        JTextField tJ = buatInputDialog("Judul buku");
+        JTextField tP = buatInputDialog("Nama penulis");
+        JTextField tG = buatInputDialog("Genre / kategori");
+        JTextField tPn = buatInputDialog("Nama penerbit");
+        JTextField tS = buatInputDialog("Jumlah stok (angka)");
+
+        String[][] fields = {{"JUDUL", ""}, {"PENULIS", ""}, {"GENRE", ""}, {"PENERBIT", ""}, {"STOK", ""}};
+        JTextField[] inputs = {tJ, tP, tG, tPn, tS};
+        for (int i = 0; i < fields.length; i++) {
+            JLabel lbl = new JLabel(fields[i][0]);
+            lbl.setForeground(C_MUTED);
+            lbl.setFont(new Font("Inter", Font.BOLD, 10));
+            lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+            form.add(lbl);
+            form.add(Box.createVerticalStrut(6));
+            form.add(inputs[i]);
+            if (i < fields.length - 1) form.add(Box.createVerticalStrut(14));
+        }
+
+        // Status awal
+        form.add(Box.createVerticalStrut(14));
+        JLabel lblStatus = new JLabel("STATUS AWAL");
+        lblStatus.setForeground(C_MUTED);
+        lblStatus.setFont(new Font("Inter", Font.BOLD, 10));
+        lblStatus.setAlignmentX(Component.LEFT_ALIGNMENT);
+        form.add(lblStatus);
+        form.add(Box.createVerticalStrut(7));
+
+        JPanel radioRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0));
+        radioRow.setOpaque(false);
+        radioRow.setMaximumSize(new Dimension(400, 30));
+        ButtonGroup bg = new ButtonGroup();
+        JRadioButton rbTersedia = new JRadioButton("Tersedia"); rbTersedia.setSelected(true);
+        JRadioButton rbKosong   = new JRadioButton("Kosong");
+        rbTersedia.setFont(new Font("Inter", Font.PLAIN, 13)); rbTersedia.setOpaque(false);
+        rbKosong.setFont(new Font("Inter", Font.PLAIN, 13));   rbKosong.setOpaque(false);
+        bg.add(rbTersedia); bg.add(rbKosong);
+        radioRow.add(rbTersedia); radioRow.add(rbKosong);
+        form.add(radioRow);
+
+        d.add(form, BorderLayout.CENTER);
+
+        // Tombol bawah
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 14));
+        btnRow.setBackground(C_INPUT);
+        btnRow.setBorder(new MatteBorder(1, 0, 0, 0, C_BORDER));
+
+        JButton batal = buatTombolSecondary("Batal");
+        batal.setPreferredSize(new Dimension(90, 38));
+        batal.addActionListener(e -> d.dispose());
+
+        BrandButton simpan = new BrandButton("Simpan");
+        simpan.setPreferredSize(new Dimension(110, 38));
+        simpan.addActionListener(e -> {
+            try {
+                String j = tJ.getText().trim(), p = tP.getText().trim(),
+                       g = tG.getText().trim(), pn = tPn.getText().trim();
+                int stok = Integer.parseInt(tS.getText().trim());
+                if (j.isEmpty() || p.isEmpty() || g.isEmpty()) {
+                    JOptionPane.showMessageDialog(d, "Judul, penulis & genre wajib diisi!", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                Daftarbuku baru = new Daftarbuku(j, p, g, pn, 2024, stok, "covers/default.jpg",
+                    "Deskripsi belum tersedia untuk buku ini.");
+                Utama.getDaftarBuku().add(baru);
+                ketersediaan.put(j, rbTersedia.isSelected());
+                refreshGridBuku();
+                // Refresh tabel kelola
+                JPanel kv = cariByName(dashboardContent, "KELOLA_VIEW");
+                if (kv != null) {
+                    JScrollPane sc = (JScrollPane) kv.getComponent(1);
+                    JTable tbl = (JTable) sc.getViewport().getView();
+                    isiTabelBuku((DefaultTableModel) tbl.getModel());
+                }
+                JOptionPane.showMessageDialog(d, "Buku \"" + j + "\" berhasil ditambahkan!");
+                d.dispose();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(d, "Stok harus berupa angka!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        btnRow.add(batal);
+        btnRow.add(simpan);
+        d.add(btnRow, BorderLayout.SOUTH);
+        d.setVisible(true);
+    }
+
+    // ─────────────────────────────────────────────
+    //  DIALOG: EDIT KETERSEDIAAN & STATUS PINJAM
+    // ─────────────────────────────────────────────
+    private void tampilDialogEditBuku(String judul, DefaultTableModel model, int row) {
+        Daftarbuku buku = Utama.getDaftarBuku().stream()
+            .filter(b -> b.getJudul().equals(judul)).findFirst().orElse(null);
+        if (buku == null) return;
+
+        boolean statusSekarang = ketersediaan.getOrDefault(judul, true);
+
+        JDialog d = new JDialog(this, "Edit Buku", true);
+        d.setSize(440, 440);
+        d.setLocationRelativeTo(this);
+        d.getContentPane().setBackground(C_CARD);
+        d.setLayout(new BorderLayout());
+
+        // Header
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(C_AKSEN);
+        header.setBorder(new EmptyBorder(18, 24, 18, 24));
+        JLabel hJudul = new JLabel("✏️  Edit Buku");
+        hJudul.setForeground(Color.WHITE);
+        hJudul.setFont(new Font("Inter", Font.BOLD, 16));
+        header.add(hJudul);
+        d.add(header, BorderLayout.NORTH);
+
+        JPanel body = new JPanel();
+        body.setOpaque(false);
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        body.setBorder(new EmptyBorder(24, 28, 20, 28));
+
+        // Info buku (read-only)
+        RoundedPanel infoBuku = new RoundedPanel(10, C_INPUT);
+        infoBuku.setLayout(new GridLayout(4, 1, 0, 4));
+        infoBuku.setBorder(new EmptyBorder(12, 16, 12, 16));
+        infoBuku.setMaximumSize(new Dimension(400, 100));
+        infoBuku.add(infoRow("Judul",    buku.getJudul()));
+        infoBuku.add(infoRow("Penulis",  buku.getPenulis()));
+        infoBuku.add(infoRow("Genre",    buku.getGenre()));
+        infoBuku.add(infoRow("Stok",     buku.getJumlah() + " eksemplar"));
+        body.add(infoBuku);
+        body.add(Box.createVerticalStrut(22));
+
+        // ── Edit ketersediaan ──
+        JLabel lblKet = new JLabel("KETERSEDIAAN BUKU");
+        lblKet.setForeground(C_MUTED);
+        lblKet.setFont(new Font("Inter", Font.BOLD, 10));
+        lblKet.setAlignmentX(Component.LEFT_ALIGNMENT);
+        body.add(lblKet);
+        body.add(Box.createVerticalStrut(8));
+
+        ButtonGroup bgKet = new ButtonGroup();
+        JRadioButton rbTersedia = new JRadioButton("✅  Tersedia — Buku dapat dipinjam");
+        JRadioButton rbKosong   = new JRadioButton("❌  Kosong — Semua stok habis dipinjam");
+        rbTersedia.setSelected(statusSekarang);
+        rbKosong.setSelected(!statusSekarang);
+        for (JRadioButton rb : new JRadioButton[]{rbTersedia, rbKosong}) {
+            rb.setOpaque(false);
+            rb.setFont(new Font("Inter", Font.PLAIN, 13));
+            rb.setForeground(C_TEKS);
+            rb.setAlignmentX(Component.LEFT_ALIGNMENT);
+            rb.setMaximumSize(new Dimension(400, 32));
+            bgKet.add(rb);
+            body.add(rb);
+            body.add(Box.createVerticalStrut(6));
+        }
+
+        body.add(Box.createVerticalStrut(18));
+
+        // ── Edit status pinjam (paksa kembalikan semua) ──
+        JLabel lblPinjam = new JLabel("MANAJEMEN PEMINJAMAN");
+        lblPinjam.setForeground(C_MUTED);
+        lblPinjam.setFont(new Font("Inter", Font.BOLD, 10));
+        lblPinjam.setAlignmentX(Component.LEFT_ALIGNMENT);
+        body.add(lblPinjam);
+        body.add(Box.createVerticalStrut(8));
+
+        long jmlPinjam = riwayatList.stream()
+            .filter(r -> r.buku.getJudul().equals(judul) && r.dipinjam).count();
+
+        RoundedPanel infoPinjam = new RoundedPanel(8, jmlPinjam > 0 ? C_WARN_BG : C_HILITE);
+        infoPinjam.setLayout(new BorderLayout(10, 0));
+        infoPinjam.setBorder(new EmptyBorder(10, 14, 10, 14));
+        infoPinjam.setMaximumSize(new Dimension(400, 50));
+
+        JLabel lblPinjamInfo = new JLabel("<html><b>" + jmlPinjam + " peminjam aktif</b> untuk buku ini</html>");
+        lblPinjamInfo.setForeground(jmlPinjam > 0 ? C_WARN_FG : C_SUCCESS);
+        lblPinjamInfo.setFont(new Font("Inter", Font.PLAIN, 12));
+        infoPinjam.add(lblPinjamInfo, BorderLayout.CENTER);
+
+        if (jmlPinjam > 0) {
+            JButton btnPaksa = new JButton("Kembalikan Semua");
+            btnPaksa.setFont(new Font("Inter", Font.BOLD, 10));
+            btnPaksa.setBackground(C_WARN_FG);
+            btnPaksa.setForeground(Color.WHITE);
+            btnPaksa.setFocusPainted(false);
+            btnPaksa.setBorder(new EmptyBorder(4, 10, 4, 10));
+            btnPaksa.addActionListener(e -> {
+                riwayatList.stream()
+                    .filter(r -> r.buku.getJudul().equals(judul) && r.dipinjam)
+                    .forEach(r -> r.dipinjam = false);
+                JOptionPane.showMessageDialog(d, "Semua peminjaman buku \"" + judul + "\" telah dikembalikan.");
+                d.dispose();
+                refreshViewRiwayat();
+                refreshNotifPanel();
+            });
+            infoPinjam.add(btnPaksa, BorderLayout.EAST);
+        }
+        body.add(infoPinjam);
+
+        d.add(body, BorderLayout.CENTER);
+
+        // Tombol bawah
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 14));
+        btnRow.setBackground(C_INPUT);
+        btnRow.setBorder(new MatteBorder(1, 0, 0, 0, C_BORDER));
+
+        JButton batal = buatTombolSecondary("Batal");
+        batal.setPreferredSize(new Dimension(90, 38));
+        batal.addActionListener(e -> d.dispose());
+
+        BrandButton simpan = new BrandButton("Simpan Perubahan");
+        simpan.setPreferredSize(new Dimension(160, 38));
+        simpan.addActionListener(e -> {
+            boolean tersediaBaru = rbTersedia.isSelected();
+            ketersediaan.put(judul, tersediaBaru);
+            model.setValueAt(tersediaBaru ? "Tersedia" : "Kosong", row, 6);
+            refreshGridBuku();
+            JOptionPane.showMessageDialog(d,
+                "Ketersediaan \"" + judul + "\" diubah ke: " + (tersediaBaru ? "Tersedia" : "Kosong"));
+            d.dispose();
+        });
+
+        btnRow.add(batal);
+        btnRow.add(simpan);
+        d.add(btnRow, BorderLayout.SOUTH);
+        d.setVisible(true);
+    }
+
+    private JLabel infoRow(String label, String nilai) {
+        JLabel l = new JLabel("<html><span style='color:#6b7280'>" + label + ":  </span><b>" + nilai + "</b></html>");
+        l.setFont(new Font("Inter", Font.PLAIN, 12));
+        return l;
+    }
+
+    // ═════════════════════════════════════════════
+    //  INNER CLASS: KARTU BUKU
+    // ═════════════════════════════════════════════
+    private class KartuBuku extends JPanel {
+        KartuBuku(Daftarbuku buku) {
+            setPreferredSize(new Dimension(205, 318));
+            setBackground(C_CARD);
+            setLayout(new BorderLayout());
+            setBorder(new LineBorder(C_BORDER, 1, true));
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+            boolean tersedia = ketersediaan.getOrDefault(buku.getJudul(), true);
+
+            // Cover
+            JPanel cover = new JPanel(new GridBagLayout());
+            cover.setPreferredSize(new Dimension(0, 152));
+            cover.setBackground(C_INPUT);
+
+            java.io.File fileCover = new java.io.File(buku.getImagePath());
+            if (fileCover.exists()) {
+                try {
+                    java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(fileCover);
+                    Image sc = img.getScaledInstance(205, 152, Image.SCALE_SMOOTH);
+                    cover.add(new JLabel(new ImageIcon(sc)));
+                } catch (Exception ex) { cover.add(fallback(buku)); }
+            } else { cover.add(fallback(buku)); }
+
+            // Badge status di atas cover
+            JPanel coverWrap = new JPanel(new BorderLayout());
+            coverWrap.setOpaque(false);
+            coverWrap.setPreferredSize(new Dimension(0, 160));
+            coverWrap.add(cover, BorderLayout.CENTER);
+
+            JLabel badge = new JLabel(tersedia ? "  Tersedia  " : "  Kosong  ");
+            badge.setFont(new Font("Inter", Font.BOLD, 9));
+            badge.setForeground(Color.WHITE);
+            badge.setOpaque(true);
+            badge.setBackground(tersedia ? C_SUCCESS : C_DANGER);
+            badge.setHorizontalAlignment(SwingConstants.CENTER);
+            badge.setPreferredSize(new Dimension(0, 20));
+            coverWrap.add(badge, BorderLayout.SOUTH);
+
+            // Info
+            JPanel info = new JPanel();
+            info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+            info.setOpaque(false);
+            info.setBorder(new EmptyBorder(10, 12, 12, 12));
+
+            JLabel lJudul = new JLabel(buku.getJudul().length() > 22 ?
+                buku.getJudul().substring(0, 22) + "…" : buku.getJudul());
+            lJudul.setForeground(C_TEKS);
+            lJudul.setFont(new Font("Inter", Font.BOLD, 13));
+
+            JLabel lPenulis = new JLabel(buku.getPenulis());
+            lPenulis.setForeground(C_MUTED);
+            lPenulis.setFont(new Font("Inter", Font.PLAIN, 11));
+
+            JLabel lGenre = new JLabel(buku.getGenre());
+            lGenre.setForeground(C_AKSEN);
+            lGenre.setFont(new Font("Inter", Font.BOLD, 9));
+
+            info.add(lJudul);
+            info.add(Box.createVerticalStrut(3));
+            info.add(lPenulis);
+            info.add(Box.createVerticalStrut(5));
+            info.add(lGenre);
+            info.add(Box.createVerticalStrut(10));
+
+            if (!isAdmin) {
+                BrandButton btnPinjam = new BrandButton(tersedia ? "Pinjam" : "Tidak Tersedia");
+                btnPinjam.setEnabled(tersedia);
+                btnPinjam.addActionListener(e -> {
+                    riwayatList.add(new PinjamRecord(
+                        penggunaAktif.getnama(), penggunaAktif.getnim(), buku, "2026-05-09"));
+                    JOptionPane.showMessageDialog(this,
+                        "\"" + buku.getJudul() + "\" berhasil dipinjam!");
+                    refreshViewRiwayat();
+                    refreshNotifPanel();
+                });
+                info.add(btnPinjam);
+            } else {
+                JLabel stok = new JLabel("Stok: " + buku.getJumlah() + " eks.");
+                stok.setForeground(C_TEKS);
+                stok.setFont(new Font("Inter", Font.BOLD, 11));
+                info.add(stok);
+            }
+
+            add(coverWrap, BorderLayout.NORTH);
+            add(info,      BorderLayout.CENTER);
+
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseClicked(MouseEvent e) {
+                    tampilPopupBuku(buku, ketersediaan.getOrDefault(buku.getJudul(), true));
+                }
+                @Override public void mouseEntered(MouseEvent e) {
+                    setBorder(new LineBorder(C_AKSEN, 2, true));
+                }
+                @Override public void mouseExited(MouseEvent e) {
+                    setBorder(new LineBorder(C_BORDER, 1, true));
+                }
+            });
+        }
+
+        private JLabel fallback(Daftarbuku b) {
+            JLabel l = new JLabel("<html><center><span style='font-size:32px'>"
+                + b.getJudul().substring(0, 1)
+                + "</span><br><small>" + b.getGenre() + "</small></center></html>");
+            l.setForeground(C_BORDER);
+            l.setHorizontalAlignment(SwingConstants.CENTER);
+            return l;
+        }
+    }
+
+    // ═════════════════════════════════════════════
+    //  POPUP DETAIL BUKU
+    // ═════════════════════════════════════════════
+    private void tampilPopupBuku(Daftarbuku buku, boolean tersedia) {
+        JDialog popup = new JDialog(this, buku.getJudul(), true);
+        popup.setSize(510, 560);
+        popup.setLocationRelativeTo(this);
+        popup.getContentPane().setBackground(C_CARD);
+        popup.setLayout(new BorderLayout());
+
+        // Header popup
+        JPanel hdr = new JPanel(new BorderLayout());
+        hdr.setBackground(tersedia ? C_AKSEN : C_MUTED);
+        hdr.setBorder(new EmptyBorder(14, 20, 14, 20));
+        JLabel hTitle = new JLabel("📖  Detail Buku");
+        hTitle.setForeground(Color.WHITE);
+        hTitle.setFont(new Font("Inter", Font.BOLD, 15));
+        hdr.add(hTitle);
+        popup.add(hdr, BorderLayout.NORTH);
+
+        JPanel isi = new JPanel(new BorderLayout(0, 14));
+        isi.setBackground(C_CARD);
+        isi.setBorder(new EmptyBorder(22, 24, 18, 24));
+
+        // Cover
+        JPanel coverWrap = new JPanel(new BorderLayout());
+        coverWrap.setBackground(C_INPUT);
+        coverWrap.setPreferredSize(new Dimension(0, 190));
+        java.io.File f = new java.io.File(buku.getImagePath());
+        if (f.exists()) {
+            try {
+                java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(f);
+                Image sc = img.getScaledInstance(135, 190, Image.SCALE_SMOOTH);
+                JLabel lc = new JLabel(new ImageIcon(sc));
+                lc.setHorizontalAlignment(SwingConstants.CENTER);
+                coverWrap.add(lc, BorderLayout.CENTER);
+            } catch (Exception ex) { coverWrap.add(new JLabel("(cover)", SwingConstants.CENTER)); }
+        } else {
+            JLabel ph = new JLabel("<html><center><big><b>" + buku.getJudul().substring(0, 1) +
+                "</b></big><br>" + buku.getGenre() + "</center></html>", SwingConstants.CENTER);
+            ph.setForeground(C_MUTED);
+            coverWrap.add(ph, BorderLayout.CENTER);
+        }
+
+        // Detail rows
+        JPanel detail = new JPanel(new GridLayout(5, 1, 0, 6));
+        detail.setBackground(C_CARD);
+        detail.add(infoRow(" Judul",    buku.getJudul()));
+        detail.add(infoRow(" Penulis",  buku.getPenulis()));
+        detail.add(infoRow(" Genre",    buku.getGenre()));
+        detail.add(infoRow(" Penerbit", buku.getPenerbit() + "  (" + buku.getTahunterbit() + ")"));
+        detail.add(infoRow(" Stok",     buku.getJumlah() + " eksemplar"));
+
+        // Deskripsi
+        JTextArea desk = new JTextArea(buku.getDeskripsi());
+        desk.setWrapStyleWord(true); desk.setLineWrap(true);
+        desk.setEditable(false); desk.setBackground(C_INPUT);
+        desk.setForeground(C_TEKS);
+        desk.setFont(new Font("Inter", Font.PLAIN, 12));
+        desk.setBorder(new EmptyBorder(10, 12, 10, 12));
+        JScrollPane sDesk = new JScrollPane(desk);
+        sDesk.setBorder(new LineBorder(C_BORDER));
+        sDesk.setPreferredSize(new Dimension(0, 85));
+
+        // Tombol bawah
+        JButton batal = buatTombolSecondary("Tutup");
+        batal.setPreferredSize(new Dimension(90, 38));
+        batal.addActionListener(e -> popup.dispose());
+
+        BrandButton pinjam = new BrandButton(tersedia ? "Pinjam Buku" : "Tidak Tersedia");
+        pinjam.setEnabled(tersedia && !isAdmin);
+        pinjam.setPreferredSize(new Dimension(140, 38));
+        pinjam.addActionListener(e -> {
+            riwayatList.add(new PinjamRecord(
+                penggunaAktif.getnama(), penggunaAktif.getnim(), buku, "2026-05-09"));
+            JOptionPane.showMessageDialog(popup, "\"" + buku.getJudul() + "\" berhasil dipinjam!");
+            popup.dispose();
+            refreshViewRiwayat();
+            refreshNotifPanel();
+        });
+
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        btnRow.setOpaque(false);
+        btnRow.add(batal); btnRow.add(pinjam);
+
+        JPanel bawah = new JPanel(new BorderLayout(0, 10));
+        bawah.setBackground(C_CARD);
+        bawah.add(sDesk,   BorderLayout.CENTER);
+        bawah.add(btnRow,  BorderLayout.SOUTH);
+
+        isi.add(coverWrap, BorderLayout.NORTH);
+        isi.add(detail,    BorderLayout.CENTER);
+        isi.add(bawah,     BorderLayout.SOUTH);
+        popup.add(isi);
+        popup.setVisible(true);
+    }
+
+    // ═════════════════════════════════════════════
+    //  HELPER UI
+    // ═════════════════════════════════════════════
+    private static void tambahPlaceholder(JTextField f, String ph) {
+        f.setText(ph); f.setForeground(C_MUTED);
+        f.addFocusListener(new FocusAdapter() {
+            @Override public void focusGained(FocusEvent e) {
+                if (f.getText().equals(ph)) { f.setText(""); f.setForeground(C_TEKS); }
+            }
+            @Override public void focusLost(FocusEvent e) {
+                if (f.getText().isEmpty()) { f.setText(ph); f.setForeground(C_MUTED); }
+            }
+        });
+    }
+
+    private static void tambahPlaceholderPassword(JPasswordField f, String ph) {
+        f.setText(ph); f.setForeground(C_MUTED); f.setEchoChar((char) 0);
+        f.addFocusListener(new FocusAdapter() {
+            @Override public void focusGained(FocusEvent e) {
+                if (new String(f.getPassword()).equals(ph)) {
+                    f.setText(""); f.setForeground(C_TEKS); f.setEchoChar('•');
+                }
+            }
+            @Override public void focusLost(FocusEvent e) {
+                if (f.getPassword().length == 0) {
+                    f.setText(ph); f.setForeground(C_MUTED); f.setEchoChar((char) 0);
+                }
+            }
+        });
+    }
+
+    private static JTextField buatInput(String hint) {
+        JTextField f = new JTextField(hint);
+        f.setMaximumSize(new Dimension(400, 45));
+        f.setBackground(C_INPUT); f.setForeground(C_MUTED);
+        f.setCaretColor(C_TEKS);
+        f.setFont(new Font("Inter", Font.PLAIN, 14));
+        f.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(C_BORDER, 1, true), new EmptyBorder(0, 14, 0, 14)));
+        return f;
+    }
+
+    private static JTextField buatInputDialog(String hint) {
+        JTextField f = new JTextField();
+        f.setMaximumSize(new Dimension(400, 42));
+        f.setBackground(C_INPUT); f.setForeground(C_MUTED);
+        f.setCaretColor(C_TEKS);
+        f.setFont(new Font("Inter", Font.PLAIN, 13));
+        f.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(C_BORDER, 1, true), new EmptyBorder(0, 12, 0, 12)));
+        tambahPlaceholder(f, hint);
+        return f;
+    }
+
+    private static JLabel buatLabelForm(String teks) {
+        JLabel l = new JLabel(teks);
+        l.setForeground(C_MUTED);
+        l.setFont(new Font("Inter", Font.BOLD, 10));
+        return l;
+    }
+
+    private static JButton buatTombolSecondary(String teks) {
+        JButton btn = new JButton(teks);
+        btn.setBackground(C_INPUT);
+        btn.setForeground(C_MUTED);
+        btn.setFocusPainted(false);
+        btn.setBorder(new LineBorder(C_BORDER, 1, true));
+        btn.setFont(new Font("Inter", Font.BOLD, 11));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
+    private static JPanel buatHeaderForm(String iko, String judul, String sub) {
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        JLabel lIko = new JLabel(iko);
+        lIko.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 36));
+        lIko.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel lJudul = new JLabel(judul);
+        lJudul.setForeground(C_TEKS);
+        lJudul.setFont(new Font("Inter", Font.BOLD, 24));
+        lJudul.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel lSub = new JLabel(sub);
+        lSub.setForeground(C_MUTED);
+        lSub.setFont(new Font("Inter", Font.PLAIN, 12));
+        lSub.setAlignmentX(Component.CENTER_ALIGNMENT);
+        p.add(lIko);
+        p.add(Box.createVerticalStrut(8));
+        p.add(lJudul);
+        p.add(Box.createVerticalStrut(4));
+        p.add(lSub);
+        return p;
+    }
+
+    private JPanel cariByName(Container c, String name) {
+        for (Component comp : c.getComponents()) {
+            if (name.equals(comp.getName())) return (JPanel) comp;
+            if (comp instanceof Container) {
+                JPanel r = cariByName((Container) comp, name);
+                if (r != null) return r;
+            }
+        }
+        return null;
+    }
+
+    // ═════════════════════════════════════════════
+    //  INNER CLASS: RoundedPanel
+    // ═════════════════════════════════════════════
+    static class RoundedPanel extends JPanel {
+        private final int r; private final Color c;
+        RoundedPanel(int r, Color c) { this.r = r; this.c = c; setOpaque(false); }
+        @Override protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(c); g2.fillRoundRect(0, 0, getWidth(), getHeight(), r, r);
+            g2.dispose(); super.paintComponent(g);
+        }
+    }
+
+    // ═════════════════════════════════════════════
+    //  INNER CLASS: BrandButton
+    // ═════════════════════════════════════════════
+    static class BrandButton extends JButton {
+        BrandButton(String t) {
+            super(t);
+            setContentAreaFilled(false); setBorderPainted(false);
+            setFocusPainted(false); setForeground(Color.WHITE);
+            setFont(new Font("Inter", Font.BOLD, 11));
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+        }
+        @Override protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(isEnabled() ? C_AKSEN : C_BORDER);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+            g2.dispose(); super.paintComponent(g);
+        }
+    }
+
+    // ═════════════════════════════════════════════
+    //  INNER CLASS: WrapLayout (grid responsif)
+    // ═════════════════════════════════════════════
+    static class WrapLayout extends FlowLayout {
+        WrapLayout(int align, int hgap, int vgap) { super(align, hgap, vgap); }
+        @Override public Dimension preferredLayoutSize(Container target) {
+            return layoutSize(target, true);
+        }
+        @Override public Dimension minimumLayoutSize(Container target) {
+            return layoutSize(target, false);
+        }
+        private Dimension layoutSize(Container target, boolean preferred) {
+            synchronized (target.getTreeLock()) {
+                int targetWidth = target.getSize().width;
+                if (targetWidth == 0) targetWidth = Integer.MAX_VALUE;
+                int hgap = getHgap(), vgap = getVgap();
+                Insets insets = target.getInsets();
+                int maxWidth = targetWidth - insets.left - insets.right - hgap * 2;
+                int x = 0, y = insets.top + vgap, rowH = 0;
+                for (int i = 0; i < target.getComponentCount(); i++) {
+                    Component c = target.getComponent(i);
+                    if (!c.isVisible()) continue;
+                    Dimension d = preferred ? c.getPreferredSize() : c.getMinimumSize();
+                    if (x != 0 && x + d.width > maxWidth) { y += rowH + vgap; x = 0; rowH = 0; }
+                    x += d.width + hgap;
+                    rowH = Math.max(rowH, d.height);
+                }
+                return new Dimension(targetWidth, y + rowH + vgap + insets.bottom);
+            }
+        }
+    }
 }
