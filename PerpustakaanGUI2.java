@@ -43,6 +43,8 @@ public class PerpustakaanGUI2 extends JFrame {
     private manusia    penggunaAktif;        // mahasiswa yang login
     private admin      adminAktif;           // admin yang login
     private boolean    isAdmin = false;
+    private String viewAktif = "BUKU";
+    private JPanel sidebarAktif;      
 
     private String selectedGenre = "Semua";
     private final List<PinjamRecord>      riwayatList    = new ArrayList<>();
@@ -373,6 +375,8 @@ public class PerpustakaanGUI2 extends JFrame {
         db.setName("DASHBOARD");
         panelUtama.add(db, "DASHBOARD");
         navigasi.show(panelUtama, "DASHBOARD");
+        viewAktif = "BUKU";
+        refreshSidebar(); 
         panelUtama.revalidate();
         panelUtama.repaint();
     }
@@ -439,15 +443,15 @@ public class PerpustakaanGUI2 extends JFrame {
         lblMenu.setBorder(new EmptyBorder(0, 6, 10, 0));
         menu.add(lblMenu);
 
-        menu.add(buatNavBtn("📖", "Daftar Buku",  "BUKU",        true));
+        menu.add(buatNavBtn("📖", "Daftar Buku",  "BUKU",        viewAktif));
         menu.add(Box.createVerticalStrut(4));
-        menu.add(buatNavBtn("📋", "Riwayat",       "RIWAYAT",     false));
+        menu.add(buatNavBtn("📋", "Riwayat",       "RIWAYAT",     viewAktif));
 
         if (isAdmin) {
             menu.add(Box.createVerticalStrut(4));
-            menu.add(buatNavBtn("🔔", "Log Notifikasi", "NOTIFIKASI", false));
+            menu.add(buatNavBtn("🔔", "Log Notifikasi", "NOTIFIKASI", viewAktif));
             menu.add(Box.createVerticalStrut(4));
-            menu.add(buatNavBtn("⚙️", "Kelola Buku",    "KELOLA",     false));
+            menu.add(buatNavBtn("⚙️", "Kelola Buku",    "KELOLA",     viewAktif));
         }
         sidebar.add(menu, BorderLayout.CENTER);
 
@@ -488,33 +492,72 @@ public class PerpustakaanGUI2 extends JFrame {
         btm.setBorder(new MatteBorder(1, 0, 0, 0, C_BORDER));
         btm.add(profil);
         sidebar.add(btm, BorderLayout.SOUTH);
-
+        sidebarAktif = sidebar; 
         return sidebar;
     }
 
-    private JButton buatNavBtn(String iko, String teks, String cardId, boolean aktif) {
-        JButton btn = new JButton(iko + "  " + teks);
-        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btn.setMaximumSize(new Dimension(222, 42));
-        btn.setFocusPainted(false);
-        btn.setFont(new Font("Inter", Font.BOLD, 12));
-        btn.setHorizontalAlignment(SwingConstants.LEFT);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    private JButton buatNavBtn(String iko, String teks, String cardId, String currentAktif) {
+    JButton btn = new JButton(iko + "  " + teks);
+    btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    btn.setMaximumSize(new Dimension(222, 42));
+    btn.setFocusPainted(false);
+    btn.setFont(new Font("Inter", Font.BOLD, 12));
+    btn.setHorizontalAlignment(SwingConstants.LEFT);
+    btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    btn.setName(cardId);
 
-        if (aktif) {
-            btn.setBackground(C_HILITE);
-            btn.setForeground(C_AKSEN);
-            btn.setOpaque(true);
-            btn.setBorder(new LineBorder(C_AKSEN, 1, true));
-        } else {
-            btn.setContentAreaFilled(false);
-            btn.setForeground(C_MUTED);
-            btn.setBorder(new EmptyBorder(0, 8, 0, 8));
-        }
-
-        btn.addActionListener(e -> dashboardLayout.show(dashboardContent, cardId));
-        return btn;
+    boolean aktif = cardId.equals(currentAktif);
+    if (aktif) {
+        btn.setBackground(C_HILITE);
+        btn.setForeground(C_AKSEN);
+        btn.setOpaque(true);
+        btn.setBorder(new LineBorder(C_AKSEN, 1, true));
+    } else {
+        btn.setContentAreaFilled(false);
+        btn.setForeground(C_MUTED);
+        btn.setBorder(new EmptyBorder(0, 8, 0, 8));
     }
+
+    btn.addActionListener(e -> {
+        viewAktif = cardId;
+        dashboardLayout.show(dashboardContent, cardId);
+        refreshSidebar();
+    });
+    return btn;
+}
+
+    private void refreshSidebar() {
+    if (sidebarAktif == null) return;
+    for (Component c : sidebarAktif.getComponents()) {
+        if (c instanceof Container) {
+            for (Component child : ((Container)c).getComponents()) {
+                if (child instanceof JButton && child.getName() != null) {
+                    JButton btn = (JButton) child;
+                    String cardId = btn.getName();
+                    boolean aktif = cardId.equals(viewAktif);
+                    updateButtonStyle(btn, aktif);
+                }
+            }
+        }
+    }
+    sidebarAktif.repaint();
+}
+
+    private void updateButtonStyle(JButton btn, boolean aktif) {
+    if (aktif) {
+        btn.setBackground(C_HILITE);
+        btn.setForeground(C_AKSEN);
+        btn.setOpaque(true);
+        btn.setBorder(new LineBorder(C_AKSEN, 1, true));
+        btn.setContentAreaFilled(true);
+    } else {
+        btn.setBackground(null);
+        btn.setForeground(C_MUTED);
+        btn.setOpaque(false);
+        btn.setBorder(new EmptyBorder(0, 8, 0, 8));
+        btn.setContentAreaFilled(false);
+    }
+}
 
     // ─────────────────────────────────────────────
     //  HEADER
