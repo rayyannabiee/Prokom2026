@@ -381,12 +381,11 @@ public class PerpustakaanGUI2 extends JFrame {
                 panelUtama.remove(i); break;
             }
         }
+        viewAktif = "BUKU"; // set sebelum buatDashboard agar sidebar terbaca benar
         JPanel db = buatDashboard();
         db.setName("DASHBOARD");
         panelUtama.add(db, "DASHBOARD");
         navigasi.show(panelUtama, "DASHBOARD");
-        viewAktif = "BUKU";
-        refreshSidebar(); 
         panelUtama.revalidate();
         panelUtama.repaint();
     }
@@ -653,8 +652,8 @@ public class PerpustakaanGUI2 extends JFrame {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.getVerticalScrollBar().setUnitIncrement(64);
-        scroll.getHorizontalScrollBar().setUnitIncrement(64);
+        scroll.getVerticalScrollBar().setUnitIncrement(20);
+        scroll.getHorizontalScrollBar().setUnitIncrement(20);
         view.add(scroll, BorderLayout.CENTER);
         return view;
     }
@@ -713,6 +712,7 @@ public class PerpustakaanGUI2 extends JFrame {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
+        scroll.getVerticalScrollBar().setUnitIncrement(20);
         view.add(scroll, BorderLayout.CENTER);
         return view;
     }
@@ -817,6 +817,7 @@ public class PerpustakaanGUI2 extends JFrame {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
+        scroll.getVerticalScrollBar().setUnitIncrement(20);
         view.add(scroll, BorderLayout.CENTER);
         return view;
     }
@@ -971,10 +972,10 @@ public class PerpustakaanGUI2 extends JFrame {
         model.setRowCount(0);
         for (Daftarbuku b : Utama.getDaftarBuku()) {
             boolean tersedia = Utama.isTersedia(b.getJudul());
-            int stokSisa = Utama.getStok(b.getJudul());
+            int stokSisa     = Utama.getStok(b.getJudul()); // stok real-time
             model.addRow(new Object[]{
                 b.getJudul(), b.getPenulis(), b.getGenre(),
-                b.getPenerbit(), b.getTahunterbit(), b.getJumlah(),
+                b.getPenerbit(), b.getTahunterbit(), stokSisa, // ← stokSisa bukan b.getJumlah()
                 tersedia ? "Tersedia" : "Kosong"
             });
         }
@@ -1076,7 +1077,8 @@ public class PerpustakaanGUI2 extends JFrame {
                 }
                 Daftarbuku baru = new Daftarbuku(j, p, g, pn, 2024, stok, "covers/default.jpg",
                     "Deskripsi belum tersedia untuk buku ini.");
-                Utama.daftarkanKetersediaan(j, p, stok); // stok > 0 → otomatis Tersedia
+                Utama.getDaftarBuku().add(baru);              // ← tambahkan ke daftar buku
+                Utama.daftarkanKetersediaan(j, p, stok);      // stok > 0 → otomatis Tersedia
                 refreshGridBuku();
                 refreshTabelKelola();
                 JOptionPane.showMessageDialog(d, "Buku \"" + j + "\" berhasil ditambahkan!");
@@ -1216,7 +1218,7 @@ public class PerpustakaanGUI2 extends JFrame {
             rb.setForeground(C_TEKS);
             rb.setAlignmentX(Component.LEFT_ALIGNMENT);
             rb.setMaximumSize(new Dimension(400, 32));
-            bgKet.add(rb);
+            // bgKet.add(rb) DIHAPUS — sudah ditambahkan sebelum loop
             body.add(rb);
             body.add(Box.createVerticalStrut(6));
         }
@@ -1386,12 +1388,21 @@ public class PerpustakaanGUI2 extends JFrame {
                 BrandButton btnPinjam = new BrandButton(tersedia ? "Pinjam" : "Tidak Tersedia");
                 btnPinjam.setEnabled(tersedia);
                 btnPinjam.addActionListener(e -> {
-                    riwayatList.add(new PinjamRecord(
-                        penggunaAktif.getnama(), penggunaAktif.getnim(), buku, "2026-05-09"));
-                    JOptionPane.showMessageDialog(this,
-                        "\"" + buku.getJudul() + "\" berhasil dipinjam!");
-                    refreshViewRiwayat();
-                    refreshNotifPanel();
+                    boolean berhasil = Utama.pinjamBuku(buku.getJudul());
+                    if (berhasil) {
+                        riwayatList.add(new PinjamRecord(
+                            penggunaAktif.getnama(), penggunaAktif.getnim(), buku, "2026-05-09"));
+                        JOptionPane.showMessageDialog(this,
+                            "\"" + buku.getJudul() + "\" berhasil dipinjam!\n" +
+                            "Stok tersisa: " + Utama.getStok(buku.getJudul()));
+                        refreshGridBuku();
+                        refreshViewRiwayat();
+                        refreshNotifPanel();
+                        refreshTabelKelola();
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                            "Maaf, stok buku ini sudah habis!", "Gagal", JOptionPane.WARNING_MESSAGE);
+                    }
                 });
                 info.add(btnPinjam);
             } else {
