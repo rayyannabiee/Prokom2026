@@ -101,7 +101,3 @@ public class peminjam extends manusia {
     
     }
 }
-<<<<<<< HEAD
-=======
-
->>>>>>> 24e413036107034a2fe8016f94489152c5acc7ae
