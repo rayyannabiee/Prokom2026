@@ -1,6 +1,6 @@
 import Buku.Daftarbuku;
-import Buku.Utama;
 import Buku.Ketersediaan;
+import Buku.Utama;
 import Buku.admin;
 import Buku.adminlogin;
 import java.awt.*;
@@ -653,10 +653,12 @@ public class PerpustakaanGUI2 extends JFrame {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.getVerticalScrollBar().setUnitIncrement(64);
+        scroll.getHorizontalScrollBar().setUnitIncrement(64);
         view.add(scroll, BorderLayout.CENTER);
         return view;
     }
+
 
     private JButton buatChip(String teks, boolean aktif) {
         JButton btn = new JButton(teks);
