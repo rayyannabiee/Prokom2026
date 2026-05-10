@@ -1,13 +1,12 @@
 import Buku.Daftarbuku;
 import Buku.Utama;
+import Buku.Ketersediaan;
 import Buku.admin;
 import Buku.adminlogin;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import javax.swing.*;
 import javax.swing.border.*;
@@ -47,7 +46,6 @@ public class PerpustakaanGUI2 extends JFrame {
 
     private String selectedGenre = "Semua";
     private final List<PinjamRecord>      riwayatList    = new ArrayList<>();
-    private final Map<String, Boolean>    ketersediaan   = new HashMap<>();  // judul → tersedia
     private final adminlogin              adminAuth      = new adminlogin();
 
     // ─────────────────────────────────────────────
@@ -79,10 +77,6 @@ public class PerpustakaanGUI2 extends JFrame {
 
         peminjam.dataKelas();
         Utama.jalankanProgram();
-
-        // Inisialisasi ketersediaan dari data Utama
-        for (Daftarbuku b : Utama.getDaftarBuku())
-            ketersediaan.put(b.getJudul(), Utama.isTersedia(b.getJudul()));
 
         navigasi   = new CardLayout();
         panelUtama = new JPanel(navigasi);
@@ -771,8 +765,11 @@ public class PerpustakaanGUI2 extends JFrame {
                     retBtn.setPreferredSize(new Dimension(110, 34));
                     retBtn.addActionListener(e -> {
                         r.dipinjam = false;
-                        refreshViewRiwayat();
+                        Utama.kembalikanBuku(r.buku.getJudul());  // ← stok +1 otomatis
+                        refreshViewRiwayat(); 
                         refreshNotifPanel();
+                        refreshGridBuku(); 
+                        refreshTabelKelola();
                     });
                     item.add(retBtn, BorderLayout.EAST);
                 }
@@ -956,7 +953,6 @@ public class PerpustakaanGUI2 extends JFrame {
                 "Hapus buku \"" + judul + "\" dari daftar?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
             if (konfirm == JOptionPane.YES_OPTION) {
                 Utama.getDaftarBuku().removeIf(b -> b.getJudul().equals(judul));
-                ketersediaan.remove(judul);
                 isiTabelBuku(model);
                 refreshGridBuku();
             }
@@ -972,13 +968,22 @@ public class PerpustakaanGUI2 extends JFrame {
     private void isiTabelBuku(DefaultTableModel model) {
         model.setRowCount(0);
         for (Daftarbuku b : Utama.getDaftarBuku()) {
-            boolean ada = ketersediaan.getOrDefault(b.getJudul(), true);
+            boolean tersedia = Utama.isTersedia(b.getJudul());
+            int stokSisa = Utama.getStok(b.getJudul());
             model.addRow(new Object[]{
                 b.getJudul(), b.getPenulis(), b.getGenre(),
                 b.getPenerbit(), b.getTahunterbit(), b.getJumlah(),
-                ada ? "Tersedia" : "Kosong"
+                tersedia ? "Tersedia" : "Kosong"
             });
         }
+    }
+
+    private void refreshTabelKelola() {
+        JPanel kv = cariByName(dashboardContent, "KELOLA_VIEW");
+         if (kv == null) return;
+        JScrollPane sc  = (JScrollPane) kv.getComponent(1);
+        JTable tbl = (JTable) sc.getViewport().getView();
+        isiTabelBuku((DefaultTableModel) tbl.getModel());
     }
 
     // ─────────────────────────────────────────────
@@ -1070,7 +1075,7 @@ public class PerpustakaanGUI2 extends JFrame {
                 Daftarbuku baru = new Daftarbuku(j, p, g, pn, 2024, stok, "covers/default.jpg",
                     "Deskripsi belum tersedia untuk buku ini.");
                 Utama.getDaftarBuku().add(baru);
-                ketersediaan.put(j, rbTersedia.isSelected());
+                Utama.setTersedia(j, rbTersedia.isSelected());
                 refreshGridBuku();
                 // Refresh tabel kelola
                 JPanel kv = cariByName(dashboardContent, "KELOLA_VIEW");
@@ -1100,7 +1105,7 @@ public class PerpustakaanGUI2 extends JFrame {
             .filter(b -> b.getJudul().equals(judul)).findFirst().orElse(null);
         if (buku == null) return;
 
-        boolean statusSekarang = ketersediaan.getOrDefault(judul, true);
+        boolean statusSekarang = Utama.isTersedia(judul);
 
         JDialog d = new JDialog(this, "Edit Buku", true);
         d.setSize(440, 440);
@@ -1216,8 +1221,11 @@ public class PerpustakaanGUI2 extends JFrame {
         BrandButton simpan = new BrandButton("Simpan Perubahan");
         simpan.setPreferredSize(new Dimension(160, 38));
         simpan.addActionListener(e -> {
-            boolean tersediaBaru = rbTersedia.isSelected();
-            ketersediaan.put(judul, tersediaBaru);
+            boolean tersediaBaru = stokTemp[0] > 0 ? rbTersedia.isSelected() : false;
+            Utama.setStokBuku(judul, stokTemp[0]);  // update stok di Utama
+            if (stokTemp[0] > 0 && rbKosong.isSelected())
+            Utama.getKetersediaan(judul).setTersedia(false);  // paksa override
+            model.setValueAt(stokTemp[0], row, 5);  // update kolom Stok
             model.setValueAt(tersediaBaru ? "Tersedia" : "Kosong", row, 6);
             refreshGridBuku();
             JOptionPane.showMessageDialog(d,
@@ -1248,7 +1256,8 @@ public class PerpustakaanGUI2 extends JFrame {
             setBorder(new LineBorder(C_BORDER, 1, true));
             setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-            boolean tersedia = ketersediaan.getOrDefault(buku.getJudul(), true);
+            boolean tersedia = Utama.isTersedia(buku.getJudul());
+            int stokSisa = Utama.getStok(buku.getJudul());
 
             // Cover
             JPanel cover = new JPanel(new GridBagLayout());
@@ -1318,8 +1327,8 @@ public class PerpustakaanGUI2 extends JFrame {
                 });
                 info.add(btnPinjam);
             } else {
-                JLabel stok = new JLabel("Stok: " + buku.getJumlah() + " eks.");
-                stok.setForeground(C_TEKS);
+                JLabel stok = new JLabel("Stok: " + stokSisa + " eks.");
+                stok.setForeground(stokSisa > 0 ? C_SUCCESS : C_DANGER);
                 stok.setFont(new Font("Inter", Font.BOLD, 11));
                 info.add(stok);
             }
@@ -1329,7 +1338,7 @@ public class PerpustakaanGUI2 extends JFrame {
 
             addMouseListener(new MouseAdapter() {
                 @Override public void mouseClicked(MouseEvent e) {
-                    tampilPopupBuku(buku, ketersediaan.getOrDefault(buku.getJudul(), true));
+                    tampilPopupBuku(buku, Utama.isTersedia(buku.getJudul()));
                 }
                 @Override public void mouseEntered(MouseEvent e) {
                     setBorder(new LineBorder(C_AKSEN, 2, true));
@@ -1423,12 +1432,19 @@ public class PerpustakaanGUI2 extends JFrame {
         pinjam.setEnabled(tersedia && !isAdmin);
         pinjam.setPreferredSize(new Dimension(140, 38));
         pinjam.addActionListener(e -> {
-            riwayatList.add(new PinjamRecord(
+            boolean berhasil = Utama.pinjamBuku(buku.getJudul());
+            if (berhasil) { riwayatList.add(new PinjamRecord(
                 penggunaAktif.getnama(), penggunaAktif.getnim(), buku, "2026-05-09"));
             JOptionPane.showMessageDialog(popup, "\"" + buku.getJudul() + "\" berhasil dipinjam!");
             popup.dispose();
+            refreshGridBuku();
             refreshViewRiwayat();
             refreshNotifPanel();
+            refreshTabelKelola();
+            } else {
+                JOptionPane.showMessageDialog(popup,
+                    "Maaf, stok buku ini sudah habis!", "Gagal", JOptionPane.WARNING_MESSAGE);
+            }
         });
 
         JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
