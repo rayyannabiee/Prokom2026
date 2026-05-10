@@ -653,16 +653,12 @@ public class PerpustakaanGUI2 extends JFrame {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.addMouseWheelListener(e -> {
-        int unitsToScroll = e.getWheelRotation();
-        int currentVal = scroll.getVerticalScrollBar().getValue();
-        int speed = 60; 
-        scroll.getVerticalScrollBar().setValue(currentVal + (unitsToScroll * speed));
-        });
-
+        scroll.getVerticalScrollBar().setUnitIncrement(64);
+        scroll.getHorizontalScrollBar().setUnitIncrement(64);
         view.add(scroll, BorderLayout.CENTER);
         return view;
     }
+
 
     private JButton buatChip(String teks, boolean aktif) {
         JButton btn = new JButton(teks);
