@@ -1494,7 +1494,9 @@ public class PerpustakaanGUI2 extends JFrame {
         // Deskripsi
         JTextArea desk = new JTextArea(buku.getDeskripsi());
         desk.setWrapStyleWord(true); desk.setLineWrap(true);
-        desk.setEditable(false); desk.setBackground(C_INPUT);
+        desk.setEditable(false); 
+        desk.setFocusable(false);
+        desk.setBackground(C_INPUT);
         desk.setForeground(C_TEKS);
         desk.setFont(new Font("Inter", Font.PLAIN, 12));
         desk.setBorder(new EmptyBorder(10, 12, 10, 12));
