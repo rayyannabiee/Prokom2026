@@ -1,6 +1,6 @@
 import Buku.Daftarbuku;
-import Buku.Utama;
 import Buku.Ketersediaan;
+import Buku.Utama;
 import Buku.admin;
 import Buku.adminlogin;
 import java.awt.*;
@@ -653,7 +653,13 @@ public class PerpustakaanGUI2 extends JFrame {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.addMouseWheelListener(e -> {
+        int unitsToScroll = e.getWheelRotation();
+        int currentVal = scroll.getVerticalScrollBar().getValue();
+        int speed = 60; 
+        scroll.getVerticalScrollBar().setValue(currentVal + (unitsToScroll * speed));
+        });
+
         view.add(scroll, BorderLayout.CENTER);
         return view;
     }
