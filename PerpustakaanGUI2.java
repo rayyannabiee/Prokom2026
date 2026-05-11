@@ -54,10 +54,20 @@ public class PerpustakaanGUI2 extends JFrame {
     private static class PinjamRecord {
         String     nama, nim, tanggal;
         Daftarbuku buku;
-        boolean    dipinjam = true;
+        boolean    dipinjam          = true;
+        boolean    terlambat         = false;  // true jika dikembalikan setelah peringatan
+        boolean    peringatanDikirim = false;  // true setelah admin kirim peringatan
+        long       tanggalPinjamMs;
+        static final long BATAS_MS = 7L * 24 * 60 * 60 * 1000; // 7 hari
+
         PinjamRecord(String nama, String nim, Daftarbuku buku, String tanggal) {
             this.nama = nama; this.nim = nim;
             this.buku = buku; this.tanggal = tanggal;
+            this.tanggalPinjamMs = System.currentTimeMillis();
+        }
+
+        boolean sudahMelebihiBatas() {
+            return System.currentTimeMillis() - tanggalPinjamMs > BATAS_MS;
         }
     }
 
@@ -737,37 +747,122 @@ public class PerpustakaanGUI2 extends JFrame {
             panel.add(emptyState);
         } else {
             for (PinjamRecord r : history) {
+                // Tombol merah HANYA jika admin sudah kirim peringatan
+                boolean sudahDiperingatkan = r.peringatanDikirim;
+
                 RoundedPanel item = new RoundedPanel(12, C_CARD);
                 item.setLayout(new BorderLayout(12, 0));
                 item.setMaximumSize(new Dimension(1000, 76));
                 item.setBorder(new EmptyBorder(14, 20, 14, 16));
 
-                // Status strip kiri
+                // Strip kiri
+                Color stripColor = r.dipinjam
+                    ? (sudahDiperingatkan ? C_DANGER : C_AKSEN)
+                    : (r.terlambat ? C_DANGER : C_SUCCESS);
                 JPanel strip = new JPanel();
                 strip.setPreferredSize(new Dimension(4, 0));
-                strip.setBackground(r.dipinjam ? C_AKSEN : C_SUCCESS);
+                strip.setBackground(stripColor);
                 item.add(strip, BorderLayout.WEST);
- 
+
                 JLabel bNama = new JLabel(r.buku.getJudul() + "  ·  " + r.buku.getPenulis());
                 bNama.setForeground(C_TEKS);
                 bNama.setFont(new Font("Inter", Font.BOLD, 13));
- 
-                JLabel statusLbl = new JLabel(r.dipinjam ? "SEDANG DIPINJAM" : "SUDAH DIKEMBALIKAN");
-                statusLbl.setForeground(r.dipinjam ? C_AKSEN : C_SUCCESS);
+
+                // Status label
+                String statusTeks;
+                Color  statusColor;
+                if (r.dipinjam) {
+                    statusTeks  = sudahDiperingatkan
+                        ? "⚠  PERINGATAN — Segera kembalikan buku!"
+                        : "SEDANG DIPINJAM";
+                    statusColor = sudahDiperingatkan ? C_DANGER : C_AKSEN;
+                } else {
+                    statusTeks  = r.terlambat
+                        ? "Sudah dikembalikan — Terlambat"
+                        : "Sudah dikembalikan";
+                    statusColor = r.terlambat ? C_DANGER : C_SUCCESS;
+                }
+                JLabel statusLbl = new JLabel(statusTeks);
+                statusLbl.setForeground(statusColor);
                 statusLbl.setFont(new Font("Inter", Font.BOLD, 10));
- 
+
                 JPanel kiri = new JPanel(new GridLayout(2, 1, 0, 4));
                 kiri.setOpaque(false);
                 kiri.add(bNama);
                 kiri.add(statusLbl);
                 item.add(kiri, BorderLayout.CENTER);
- 
+
                 if (r.dipinjam) {
-                    BrandButton retBtn = new BrandButton("Kembalikan");
+                    // Warna tombol: merah jika sudah diperingatkan, biru jika belum
+                    JButton retBtn = new JButton("Kembalikan");
+                    retBtn.setForeground(Color.WHITE);
+                    retBtn.setFocusPainted(false);
+                    retBtn.setFont(new Font("Inter", Font.BOLD, 10));
+                    retBtn.setBorder(new EmptyBorder(6, 10, 6, 10));
                     retBtn.setPreferredSize(new Dimension(110, 34));
+                    retBtn.setBackground(sudahDiperingatkan ? C_DANGER : C_AKSEN);
+
                     retBtn.addActionListener(e -> {
-                        r.dipinjam = false;
-                        Utama.kembalikanBuku(r.buku.getJudul()); // stok +1, status otomatis update
+                        r.dipinjam  = false;
+                        r.terlambat = r.peringatanDikirim; // terlambat jika sudah diperingatkan
+                        Utama.kembalikanBuku(r.buku.getJudul());
+
+                        if (r.terlambat) {
+                            // Popup khusus jika terlambat
+                            JDialog popTerlambat = new JDialog(this, "Pengembalian Terlambat", true);
+                            popTerlambat.setSize(380, 220);
+                            popTerlambat.setLocationRelativeTo(this);
+                            popTerlambat.getContentPane().setBackground(C_CARD);
+                            popTerlambat.setLayout(new BorderLayout());
+
+                            JPanel hdrT = new JPanel(new BorderLayout());
+                            hdrT.setBackground(C_DANGER);
+                            hdrT.setBorder(new EmptyBorder(14, 20, 14, 20));
+                            JLabel hTeks = new JLabel("⚠  Buku Terlambat Dikembalikan");
+                            hTeks.setForeground(Color.WHITE);
+                            hTeks.setFont(new Font("Inter", Font.BOLD, 14));
+                            hdrT.add(hTeks);
+                            popTerlambat.add(hdrT, BorderLayout.NORTH);
+
+                            JPanel bodyT = new JPanel();
+                            bodyT.setOpaque(false);
+                            bodyT.setLayout(new BoxLayout(bodyT, BoxLayout.Y_AXIS));
+                            bodyT.setBorder(new EmptyBorder(20, 24, 20, 24));
+
+                            JLabel lBuku = new JLabel("Buku: " + r.buku.getJudul());
+                            lBuku.setForeground(C_TEKS);
+                            lBuku.setFont(new Font("Inter", Font.BOLD, 13));
+                            lBuku.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                            JLabel lInfo = new JLabel("Buku ini dikembalikan setelah peringatan admin.");
+                            lInfo.setForeground(C_MUTED);
+                            lInfo.setFont(new Font("Inter", Font.PLAIN, 12));
+                            lInfo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                            JLabel lKet = new JLabel("Status: Dikembalikan — Terlambat");
+                            lKet.setForeground(C_DANGER);
+                            lKet.setFont(new Font("Inter", Font.BOLD, 11));
+                            lKet.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                            bodyT.add(lBuku);
+                            bodyT.add(Box.createVerticalStrut(8));
+                            bodyT.add(lInfo);
+                            bodyT.add(Box.createVerticalStrut(8));
+                            bodyT.add(lKet);
+                            popTerlambat.add(bodyT, BorderLayout.CENTER);
+
+                            JPanel btnT = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 10));
+                            btnT.setBackground(C_INPUT);
+                            btnT.setBorder(new MatteBorder(1, 0, 0, 0, C_BORDER));
+                            JButton ok = new BrandButton("OK, Mengerti");
+                            ok.setPreferredSize(new Dimension(120, 36));
+                            ok.addActionListener(ev -> popTerlambat.dispose());
+                            btnT.add(ok);
+                            popTerlambat.add(btnT, BorderLayout.SOUTH);
+
+                            popTerlambat.setVisible(true);
+                        }
+
                         refreshViewRiwayat();
                         refreshNotifPanel();
                         refreshGridBuku();
@@ -775,7 +870,7 @@ public class PerpustakaanGUI2 extends JFrame {
                     });
                     item.add(retBtn, BorderLayout.EAST);
                 }
- 
+
                 panel.add(item);
                 panel.add(Box.createVerticalStrut(8));
             }
@@ -831,24 +926,55 @@ public class PerpustakaanGUI2 extends JFrame {
             panel.add(empty);
         }
         for (PinjamRecord r : riwayatList) {
+            boolean lewat = r.dipinjam && r.sudahMelebihiBatas();
             RoundedPanel card = new RoundedPanel(10, C_CARD);
             card.setLayout(new BorderLayout(10, 0));
             card.setMaximumSize(new Dimension(1000, 62));
             card.setBorder(new EmptyBorder(10, 16, 10, 16));
- 
+
             JPanel dot = new JPanel();
             dot.setPreferredSize(new Dimension(4, 0));
-            dot.setBackground(r.dipinjam ? C_AKSEN : C_SUCCESS);
+            dot.setBackground(r.dipinjam ? (lewat ? C_DANGER : C_AKSEN) : C_SUCCESS);
             card.add(dot, BorderLayout.WEST);
- 
+
             String msg = "<html><b>" + r.nama + "</b> <span style='color:#6b7280'>(" + r.nim + ")</span> "
                 + (r.dipinjam ? "meminjam" : "mengembalikan")
+                + (lewat ? " <span style='color:#dc2626'>[MELEWATI BATAS]</span>" : "")
                 + " &nbsp;<b>" + r.buku.getJudul() + "</b></html>";
             JLabel lbl = new JLabel(msg);
             lbl.setForeground(C_TEKS);
             lbl.setFont(new Font("Inter", Font.PLAIN, 13));
             card.add(lbl, BorderLayout.CENTER);
- 
+
+            // Tombol kirim peringatan jika masih dipinjam
+            if (r.dipinjam) {
+                String labelBtn = r.peringatanDikirim
+                    ? "🔔 Peringatan Terkirim"
+                    : "🔔 Kirim Peringatan";
+                Color  warnaBg  = r.peringatanDikirim ? C_MUTED : C_WARN_FG;
+
+                JButton btnWarn = new JButton(labelBtn);
+                btnWarn.setBackground(warnaBg);
+                btnWarn.setForeground(Color.WHITE);
+                btnWarn.setFocusPainted(false);
+                btnWarn.setFont(new Font("Inter", Font.BOLD, 10));
+                btnWarn.setBorder(new EmptyBorder(4, 10, 4, 10));
+                btnWarn.setEnabled(!r.peringatanDikirim); // nonaktif jika sudah pernah dikirim
+
+                btnWarn.addActionListener(e -> {
+                    r.peringatanDikirim = true; // tandai sudah diperingatkan
+                    JOptionPane.showMessageDialog(this,
+                        "Peringatan dikirim ke:\n" + r.nama + " (" + r.nim + ")\n\n" +
+                        "Buku \"" + r.buku.getJudul() + "\" harus segera dikembalikan!\n" +
+                        "Tombol kembalikan mahasiswa kini berwarna merah.",
+                        "Peringatan Terkirim ✅", JOptionPane.WARNING_MESSAGE);
+                    // Refresh notif (perbarui warna tombol) dan riwayat mahasiswa
+                    refreshNotifPanel();
+                    refreshViewRiwayat();
+                });
+                card.add(btnWarn, BorderLayout.EAST);
+            }
+
             panel.add(card);
             panel.add(Box.createVerticalStrut(6));
         }
@@ -994,7 +1120,7 @@ public class PerpustakaanGUI2 extends JFrame {
     // ─────────────────────────────────────────────
     private void tampilDialogTambahBuku() {
         JDialog d = new JDialog(this, "Tambah Buku Baru", true);
-        d.setSize(460, 480);
+        d.setSize(460, 560);
         d.setLocationRelativeTo(this);
         d.getContentPane().setBackground(C_CARD);
         d.setLayout(new BorderLayout());
@@ -1013,23 +1139,24 @@ public class PerpustakaanGUI2 extends JFrame {
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
         form.setBorder(new EmptyBorder(24, 28, 20, 28));
 
-        JTextField tJ = buatInputDialog("Judul buku");
-        JTextField tP = buatInputDialog("Nama penulis");
-        JTextField tG = buatInputDialog("Genre / kategori");
+        JTextField tJ  = buatInputDialog("Judul buku");
+        JTextField tP  = buatInputDialog("Nama penulis");
+        JTextField tG  = buatInputDialog("Genre / kategori");
         JTextField tPn = buatInputDialog("Nama penerbit");
-        JTextField tS = buatInputDialog("Jumlah stok (angka)");
+        JTextField tTh = buatInputDialog("Tahun terbit (angka)");
+        JTextField tS  = buatInputDialog("Jumlah stok (angka)");
 
-        String[][] fields = {{"JUDUL", ""}, {"PENULIS", ""}, {"GENRE", ""}, {"PENERBIT", ""}, {"STOK", ""}};
-        JTextField[] inputs = {tJ, tP, tG, tPn, tS};
-        for (int i = 0; i < fields.length; i++) {
-            JLabel lbl = new JLabel(fields[i][0]);
+        String[]   labels = {"JUDUL", "PENULIS", "GENRE", "PENERBIT", "TAHUN TERBIT", "STOK"};
+        JTextField[] inputs = {tJ, tP, tG, tPn, tTh, tS};
+        for (int i = 0; i < labels.length; i++) {
+            JLabel lbl = new JLabel(labels[i]);
             lbl.setForeground(C_MUTED);
             lbl.setFont(new Font("Inter", Font.BOLD, 10));
             lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
             form.add(lbl);
             form.add(Box.createVerticalStrut(6));
             form.add(inputs[i]);
-            if (i < fields.length - 1) form.add(Box.createVerticalStrut(14));
+            if (i < labels.length - 1) form.add(Box.createVerticalStrut(14));
         }
 
         // Status awal
@@ -1068,14 +1195,15 @@ public class PerpustakaanGUI2 extends JFrame {
         simpan.setPreferredSize(new Dimension(110, 38));
         simpan.addActionListener(e -> {
             try {
-                String j = tJ.getText().trim(), p = tP.getText().trim(),
-                       g = tG.getText().trim(), pn = tPn.getText().trim();
-                int stok = Integer.parseInt(tS.getText().trim());
+                String j  = tJ.getText().trim(),  p  = tP.getText().trim(),
+                       g  = tG.getText().trim(),  pn = tPn.getText().trim();
+                int tahun = Integer.parseInt(tTh.getText().trim());
+                int stok  = Integer.parseInt(tS.getText().trim());
                 if (j.isEmpty() || p.isEmpty() || g.isEmpty()) {
                     JOptionPane.showMessageDialog(d, "Judul, penulis & genre wajib diisi!", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                Daftarbuku baru = new Daftarbuku(j, p, g, pn, 2024, stok, "covers/default.jpg",
+                Daftarbuku baru = new Daftarbuku(j, p, g, pn, tahun, stok, "covers/default.jpg",
                     "Deskripsi belum tersedia untuk buku ini.");
                 Utama.getDaftarBuku().add(baru);              // ← tambahkan ke daftar buku
                 Utama.daftarkanKetersediaan(j, p, stok);      // stok > 0 → otomatis Tersedia
@@ -1084,7 +1212,7 @@ public class PerpustakaanGUI2 extends JFrame {
                 JOptionPane.showMessageDialog(d, "Buku \"" + j + "\" berhasil ditambahkan!");
                 d.dispose();
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(d, "Stok harus berupa angka!", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(d, "Tahun dan stok harus berupa angka!", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
  
@@ -1388,6 +1516,18 @@ public class PerpustakaanGUI2 extends JFrame {
                 BrandButton btnPinjam = new BrandButton(tersedia ? "Pinjam" : "Tidak Tersedia");
                 btnPinjam.setEnabled(tersedia);
                 btnPinjam.addActionListener(e -> {
+                    // Cek apakah mahasiswa ini masih meminjam buku yang sama
+                    boolean sudahPinjam = riwayatList.stream().anyMatch(r ->
+                        r.nama.equals(penggunaAktif.getnama()) &&
+                        r.nim.equals(penggunaAktif.getnim()) &&
+                        r.buku.getJudul().equals(buku.getJudul()) &&
+                        r.dipinjam);
+                    if (sudahPinjam) {
+                        JOptionPane.showMessageDialog(this,
+                            "Kamu masih meminjam buku ini!\nKembalikan dulu sebelum meminjam lagi.",
+                            "Tidak Bisa Meminjam", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
                     boolean berhasil = Utama.pinjamBuku(buku.getJudul());
                     if (berhasil) {
                         riwayatList.add(new PinjamRecord(
@@ -1482,14 +1622,15 @@ public class PerpustakaanGUI2 extends JFrame {
             coverWrap.add(ph, BorderLayout.CENTER);
         }
 
-        // Detail rows
+        // Detail rows — stok diambil real-time dari Utama
+        int stokPopup = Utama.getStok(buku.getJudul());
         JPanel detail = new JPanel(new GridLayout(5, 1, 0, 6));
         detail.setBackground(C_CARD);
         detail.add(infoRow(" Judul",    buku.getJudul()));
         detail.add(infoRow(" Penulis",  buku.getPenulis()));
         detail.add(infoRow(" Genre",    buku.getGenre()));
         detail.add(infoRow(" Penerbit", buku.getPenerbit() + "  (" + buku.getTahunterbit() + ")"));
-        detail.add(infoRow(" Stok",     buku.getJumlah() + " eksemplar"));
+        detail.add(infoRow(" Stok",     stokPopup + " eksemplar"));  // ← real-time
 
         // Deskripsi
         JTextArea desk = new JTextArea(buku.getDeskripsi());
@@ -1513,15 +1654,30 @@ public class PerpustakaanGUI2 extends JFrame {
         pinjam.setEnabled(tersedia && !isAdmin);
         pinjam.setPreferredSize(new Dimension(140, 38));
         pinjam.addActionListener(e -> {
+            // Cek duplikat pinjam
+            boolean sudahPinjam = !isAdmin && riwayatList.stream().anyMatch(r ->
+                r.nama.equals(penggunaAktif.getnama()) &&
+                r.nim.equals(penggunaAktif.getnim()) &&
+                r.buku.getJudul().equals(buku.getJudul()) &&
+                r.dipinjam);
+            if (sudahPinjam) {
+                JOptionPane.showMessageDialog(popup,
+                    "Kamu masih meminjam buku ini!\nKembalikan dulu sebelum meminjam lagi.",
+                    "Tidak Bisa Meminjam", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             boolean berhasil = Utama.pinjamBuku(buku.getJudul());
-            if (berhasil) { riwayatList.add(new PinjamRecord(
-                penggunaAktif.getnama(), penggunaAktif.getnim(), buku, "2026-05-09"));
-            JOptionPane.showMessageDialog(popup, "\"" + buku.getJudul() + "\" berhasil dipinjam!");
-            popup.dispose();
-            refreshGridBuku();
-            refreshViewRiwayat();
-            refreshNotifPanel();
-            refreshTabelKelola();
+            if (berhasil) {
+                riwayatList.add(new PinjamRecord(
+                    penggunaAktif.getnama(), penggunaAktif.getnim(), buku, "2026-05-09"));
+                JOptionPane.showMessageDialog(popup,
+                    "\"" + buku.getJudul() + "\" berhasil dipinjam!\n" +
+                    "Stok tersisa: " + Utama.getStok(buku.getJudul()));
+                popup.dispose();
+                refreshGridBuku();
+                refreshViewRiwayat();
+                refreshNotifPanel();
+                refreshTabelKelola();
             } else {
                 JOptionPane.showMessageDialog(popup,
                     "Maaf, stok buku ini sudah habis!", "Gagal", JOptionPane.WARNING_MESSAGE);
