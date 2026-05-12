@@ -35,7 +35,6 @@ public class peminjam extends manusia {
                 return Peminjam;
             }
         }
-        System.out.println("data peminjam dengan nim " + nim + " tidak ditemukan");
         return null;
     }
     public static peminjam carinama (String nama){
@@ -44,7 +43,6 @@ public class peminjam extends manusia {
                 return Peminjam;
             }
         }
-        System.out.println("data peminjam dengan nim " + nama + " tidak ditemukan");
         return null;
     }
     public static  peminjam carinoHP (String nomorhp){
@@ -53,7 +51,6 @@ public class peminjam extends manusia {
                 return Peminjam;
             }
         }
-        System.out.println("data peminjam dengan nomor hp " + nomorhp + " tidak ditemukan");
         return null;
     }
 
