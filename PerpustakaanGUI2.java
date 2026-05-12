@@ -5,6 +5,7 @@ import Buku.admin;
 import Buku.adminlogin;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,8 +34,8 @@ public class PerpustakaanGUI2 extends JFrame {
     // ─────────────────────────────────────────────
     //  STATE
     // ─────────────────────────────────────────────
-    private JPanel     panelUtama;
-    private CardLayout navigasi;
+    private final JPanel     panelUtama;
+    private final CardLayout navigasi;
     private JPanel     dashboardContent;
     private CardLayout dashboardLayout;
 
@@ -52,7 +53,7 @@ public class PerpustakaanGUI2 extends JFrame {
     //  MODEL PINJAM
     // ─────────────────────────────────────────────
     private static class PinjamRecord {
-        String     nama, nim, tanggal;
+        String     nama, nim;
         Daftarbuku buku;
         boolean    dipinjam          = true;
         boolean    terlambat         = false;  // true jika dikembalikan setelah peringatan
@@ -62,7 +63,7 @@ public class PerpustakaanGUI2 extends JFrame {
 
         PinjamRecord(String nama, String nim, Daftarbuku buku, String tanggal) {
             this.nama = nama; this.nim = nim;
-            this.buku = buku; this.tanggal = tanggal;
+            this.buku = buku;
             this.tanggalPinjamMs = System.currentTimeMillis();
         }
 
@@ -231,6 +232,7 @@ public class PerpustakaanGUI2 extends JFrame {
         kartu.setPreferredSize(new Dimension(440, 440));
         kartu.setLayout(new BorderLayout());
         kartu.setBorder(new EmptyBorder(42, 42, 42, 42));
+        
 
         JPanel top = buatHeaderForm("👤", "Login Mahasiswa", "Masukkan nama & NIM terdaftar");
         kartu.add(top, BorderLayout.NORTH);
@@ -288,8 +290,7 @@ public class PerpustakaanGUI2 extends JFrame {
                 isAdmin = false;
                 masukDashboard();
             } else {
-                JOptionPane.showMessageDialog(this, "Nama atau NIM tidak ditemukan!",
-                    "Login Gagal", JOptionPane.ERROR_MESSAGE);
+                // Pesan error dihapus sesuai permintaan
             }
         });
         form.add(btnLogin);
@@ -323,6 +324,7 @@ public class PerpustakaanGUI2 extends JFrame {
         form.setOpaque(false);
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
         form.setBorder(new EmptyBorder(28, 0, 0, 0));
+        form.setAlignmentX(Component.CENTER_ALIGNMENT); // Pastikan form rata tengah
 
         form.add(buatLabelForm("USERNAME"));
         form.add(Box.createVerticalStrut(7));
@@ -548,10 +550,9 @@ public class PerpustakaanGUI2 extends JFrame {
     private void refreshSidebar() {
     if (sidebarAktif == null) return;
     for (Component c : sidebarAktif.getComponents()) {
-        if (c instanceof Container) {
-            for (Component child : ((Container)c).getComponents()) {
-                if (child instanceof JButton && child.getName() != null) {
-                    JButton btn = (JButton) child;
+        if (c instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                if (child instanceof JButton btn && child.getName() != null) {
                     String cardId = btn.getName();
                     boolean aktif = cardId.equals(viewAktif);
                     updateButtonStyle(btn, aktif);
@@ -639,8 +640,7 @@ public class PerpustakaanGUI2 extends JFrame {
             btnG.addActionListener(e -> {
                 selectedGenre = g;
                 for (Component c : filterBar.getComponents())
-                    if (c instanceof JButton) {
-                        JButton b = (JButton) c;
+                    if (c instanceof JButton b) {
                         boolean aktif = b.getText().equals(g);
                         b.setBackground(aktif ? C_AKSEN : C_INPUT);
                         b.setForeground(aktif ? Color.WHITE : C_MUTED);
@@ -1468,7 +1468,7 @@ public class PerpustakaanGUI2 extends JFrame {
                     java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(fileCover);
                     Image sc = img.getScaledInstance(205, 152, Image.SCALE_SMOOTH);
                     cover.add(new JLabel(new ImageIcon(sc)));
-                } catch (Exception ex) { cover.add(fallback(buku)); }
+                } catch (IOException ex) { cover.add(fallback(buku)); }
             } else { cover.add(fallback(buku)); }
 
             // Badge status di atas cover
@@ -1614,7 +1614,7 @@ public class PerpustakaanGUI2 extends JFrame {
                 JLabel lc = new JLabel(new ImageIcon(sc));
                 lc.setHorizontalAlignment(SwingConstants.CENTER);
                 coverWrap.add(lc, BorderLayout.CENTER);
-            } catch (Exception ex) { coverWrap.add(new JLabel("(cover)", SwingConstants.CENTER)); }
+            } catch (IOException ex) { coverWrap.add(new JLabel("(cover)", SwingConstants.CENTER)); }
         } else {
             JLabel ph = new JLabel("<html><center><big><b>" + buku.getJudul().substring(0, 1) +
                 "</b></big><br>" + buku.getGenre() + "</center></html>", SwingConstants.CENTER);
@@ -1779,6 +1779,7 @@ public class PerpustakaanGUI2 extends JFrame {
         JLabel lIko = new JLabel(iko);
         lIko.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 36));
         lIko.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lIko.setBorder(new EmptyBorder(10, 0, 0, 0)); // Tambah margin atas agar emoji tidak terpotong
         JLabel lJudul = new JLabel(judul);
         lJudul.setForeground(C_TEKS);
         lJudul.setFont(new Font("Inter", Font.BOLD, 24));
@@ -1798,8 +1799,8 @@ public class PerpustakaanGUI2 extends JFrame {
     private JPanel cariByName(Container c, String name) {
         for (Component comp : c.getComponents()) {
             if (name.equals(comp.getName())) return (JPanel) comp;
-            if (comp instanceof Container) {
-                JPanel r = cariByName((Container) comp, name);
+            if (comp instanceof Container container) {
+                JPanel r = cariByName(container, name);
                 if (r != null) return r;
             }
         }
