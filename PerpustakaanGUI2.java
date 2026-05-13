@@ -131,7 +131,7 @@ public class PerpustakaanGUI2 extends JFrame {
         sub.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         top.add(logo);
-        top.add(Box.createVerticalStrut(12));
+        top.add(Box.createVerticalStrut(2));
         top.add(judul);
         top.add(Box.createVerticalStrut(6));
         top.add(sub);
@@ -323,20 +323,26 @@ public class PerpustakaanGUI2 extends JFrame {
         JPanel form = new JPanel();
         form.setOpaque(false);
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
-        form.setBorder(new EmptyBorder(28, 0, 0, 0));
-        form.setAlignmentX(Component.CENTER_ALIGNMENT); // Pastikan form rata tengah
+        form.setBorder(new EmptyBorder(28, 0, 0, 0 ));
+        form.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        form.add(buatLabelForm("USERNAME"));
+        JLabel lblUser = buatLabelForm("USERNAME");
+        lblUser.setAlignmentX(Component.CENTER_ALIGNMENT);
+        form.add(lblUser);
         form.add(Box.createVerticalStrut(7));
         JTextField txtUser = buatInput("Masukkan username...");
+        txtUser.setAlignmentX(Component.CENTER_ALIGNMENT);
         tambahPlaceholder(txtUser, "Masukkan username...");
         form.add(txtUser);
         form.add(Box.createVerticalStrut(18));
 
-        form.add(buatLabelForm("PASSWORD"));
+        JLabel lblPass = buatLabelForm("PASSWORD");
+        lblPass.setAlignmentX(Component.CENTER_ALIGNMENT);
+        form.add(lblPass);
         form.add(Box.createVerticalStrut(7));
         JPasswordField txtPass = new JPasswordField("Masukkan password...");
-        txtPass.setMaximumSize(new Dimension(400, 45));
+        txtPass.setMaximumSize(new Dimension(400, 46));
+        txtPass.setAlignmentX(Component.CENTER_ALIGNMENT);
         txtPass.setBackground(C_INPUT);
         txtPass.setForeground(C_MUTED);
         txtPass.setCaretColor(C_TEKS);
@@ -346,21 +352,22 @@ public class PerpustakaanGUI2 extends JFrame {
             new LineBorder(C_BORDER, 1, true), new EmptyBorder(0, 14, 0, 14)));
         tambahPlaceholderPassword(txtPass, "Masukkan password...");
         form.add(txtPass);
-        form.add(Box.createVerticalStrut(28));
+        form.add(Box.createVerticalStrut(24));
 
-        // Info hint
         JPanel hint = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         hint.setOpaque(false);
         hint.setMaximumSize(new Dimension(400, 30));
+        hint.setAlignmentX(Component.CENTER_ALIGNMENT);
         JLabel lblHint = new JLabel("Contoh: username = Pali, password = palkel2");
         lblHint.setForeground(C_MUTED);
         lblHint.setFont(new Font("Inter", Font.ITALIC, 10));
         hint.add(lblHint);
         form.add(hint);
-        form.add(Box.createVerticalStrut(14));
+        form.add(Box.createVerticalStrut(12));
 
         BrandButton btnLogin = new BrandButton("Masuk sebagai Admin");
         btnLogin.setMaximumSize(new Dimension(400, 46));
+        btnLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnLogin.addActionListener(e -> {
             String user = txtUser.getText().trim();
             String pass = new String(txtPass.getPassword()).trim();
@@ -378,11 +385,15 @@ public class PerpustakaanGUI2 extends JFrame {
         form.add(Box.createVerticalStrut(12));
 
         JButton btnBack = buatTombolSecondary("← Kembali");
+        btnBack.setMaximumSize(new Dimension(400, 46));
+        btnBack.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnBack.addActionListener(e -> navigasi.show(panelUtama, "PILIH_LOGIN"));
         form.add(btnBack);
 
         kartu.add(form, BorderLayout.CENTER);
-        bg.add(kartu);
+        bg.add(kartu, new GridBagConstraints(0, 0, 1, 1, 1, 1,
+            GridBagConstraints.CENTER, GridBagConstraints.NONE,
+            new Insets(0, 0, 0, 0), 0, 0));
         return bg;
     }
 
@@ -810,7 +821,7 @@ public class PerpustakaanGUI2 extends JFrame {
                         if (r.terlambat) {
                             // Popup khusus jika terlambat
                             JDialog popTerlambat = new JDialog(this, "Pengembalian Terlambat", true);
-                            popTerlambat.setSize(380, 220);
+                            popTerlambat.setSize(380, 350);
                             popTerlambat.setLocationRelativeTo(this);
                             popTerlambat.getContentPane().setBackground(C_CARD);
                             popTerlambat.setLayout(new BorderLayout());
