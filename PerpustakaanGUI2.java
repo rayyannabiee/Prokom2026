@@ -119,6 +119,7 @@ public class PerpustakaanGUI2 extends JFrame {
         JLabel logo = new JLabel("📚");
         logo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        logo.setBorder(new EmptyBorder(10, 0, 0, 0));
 
         JLabel judul = new JLabel("Perpustakaan Digital");
         judul.setForeground(C_TEKS);
@@ -131,7 +132,7 @@ public class PerpustakaanGUI2 extends JFrame {
         sub.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         top.add(logo);
-        top.add(Box.createVerticalStrut(2));
+        top.add(Box.createVerticalStrut(12));
         top.add(judul);
         top.add(Box.createVerticalStrut(6));
         top.add(sub);
@@ -1790,7 +1791,7 @@ public class PerpustakaanGUI2 extends JFrame {
         JLabel lIko = new JLabel(iko);
         lIko.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 36));
         lIko.setAlignmentX(Component.CENTER_ALIGNMENT);
-        lIko.setBorder(new EmptyBorder(10, 0, 0, 0)); // Tambah margin atas agar emoji tidak terpotong
+        lIko.setBorder(new EmptyBorder(14, 0, 0, 0)); // Tambah margin atas agar ikon tidak terpotong
         JLabel lJudul = new JLabel(judul);
         lJudul.setForeground(C_TEKS);
         lJudul.setFont(new Font("Inter", Font.BOLD, 24));
